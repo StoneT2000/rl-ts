@@ -1,0 +1,8 @@
+# nodejs
+node_modules
+lib
+docs
+
+# for macs
+.DS_Store
+

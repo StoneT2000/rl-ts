@@ -6,15 +6,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build:es5": "tsc --build tsconfig-es5.json",
-    "build:es6": "tsc --build tsconfig-es5.json",
-    "build": "npm run build:es5 && npm run build:es6"
+    "build:es6": "tsc --build tsconfig.json",
+    "build": "npm run build:es5 && npm run build:es6",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --fix --ext .ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.15",
+    "@types/mocha": "^8.2.2",
+    "@typescript-eslint/eslint-plugin": "^4.20.0",
     "chai": "^4.3.0",
+    "eslint": "^7.23.0",
+    "mocha": "^8.3.2",
     "nyc": "^15.1.0",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.28",

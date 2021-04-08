@@ -1,12 +1,12 @@
 import { Space } from '.';
 
-type DictData = Record<string, any>
+type DictData = Record<string, any>;
 export class Dict<T extends Record<string, any>> extends Space<T> {
   constructor(public spaces: Record<string, Space<any>>) {
     super();
   }
   sample() {
-    let sample: Record<string, any> = {}
+    let sample: Record<string, any> = {};
     for (let k of Object.keys(this.spaces)) {
       sample[k] = this.spaces[k].sample();
     }
@@ -18,7 +18,7 @@ export class Dict<T extends Record<string, any>> extends Space<T> {
     }
     return true;
   }
-  to_jsonable(sample_n: T[] ) {
+  to_jsonable(sample_n: T[]) {
     return sample_n;
   }
   from_jsonable(sample_n: T[]) {

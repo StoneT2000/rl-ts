@@ -4,7 +4,7 @@
 
 This is a RL library built with **typescript**, enabling faster bug-free development and scalability and more.
 
-Install with 
+Install with
 
 ```
 npm install rl-ts
@@ -24,8 +24,8 @@ To get started - WIP
 
 - Did I mention that it's written in **typescript**? That means types! Less bugs!
 
-Why RL with typescript / javascript (TS/JS)? TS/JS powers the web and a ton of the awesome visuals you see online. 
-While indeed production level reinforcement deep learning should be done with python / C++, TS/JS makes it easy to directly integrate RL 
+Why RL with typescript / javascript (TS/JS)? TS/JS powers the web and a ton of the awesome visuals you see online.
+While indeed production level reinforcement deep learning should be done with python / C++, TS/JS makes it easy to directly integrate RL
 into the browser and serve not only as a simple integration for visualizers, but also as a powerful web-based teaching tool on RL. Moreover, this library can help developers with a background in TS/JS ease their way into using python / C++ for RL.
 
 Inspired by [Andrej Karpathy's blog post](http://karpathy.github.io/2016/05/31/rl/), I'm building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained. Typescript enables typing which massively improves the scalability and maintainability of this library.
@@ -36,7 +36,7 @@ This library aims to be effectively a combination of the Open AI Gym and a minia
 
 ## Development
 
-First install all necessary dependencies via 
+First install all necessary dependencies via
 
 ```
 npm i

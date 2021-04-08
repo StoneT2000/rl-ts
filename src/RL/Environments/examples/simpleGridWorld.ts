@@ -1,7 +1,7 @@
 import { Environment, RenderModes } from '..';
 import { Box2D, Dict, Discrete } from '../../Spaces';
 
-type State = {grid: number[][], agentPos: Position};
+type State = { grid: number[][]; agentPos: Position };
 type Action = number;
 type Position = { x: number; y: number };
 type ObservationSpace = Dict<State>;
@@ -30,8 +30,8 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
       grid: new Box2D(0, 1, [2, 2]),
       agentPos: new Dict({
         x: new Discrete(4),
-        y: new Discrete(4)
-      })
+        y: new Discrete(4),
+      }),
     });
     this.state = this.genState();
 
@@ -98,7 +98,7 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
   private genState(): State {
     let grid = this.genGrid();
     let agentPos = this.startPosition;
-    return {grid, agentPos};
+    return { grid, agentPos };
   }
   private genGrid(): number[][] {
     let grid = new Array(this.height);

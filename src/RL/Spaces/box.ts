@@ -1,11 +1,11 @@
-import { Shape, Space } from ".";
-import { randomRange } from "../utils/random";
+import { Shape, Space } from '.';
+import { randomRange } from '../utils/random';
 
 export class Box2D extends Space<number[][]> {
   constructor(public low: number, public high: number, shape: Shape) {
     super(shape);
     if (shape.length !== 2) {
-      throw new Error("Shape must be 2D");
+      throw new Error('Shape must be 2D');
     }
   }
   sample(): number[][] {
@@ -39,5 +39,4 @@ export class Box2D extends Space<number[][]> {
   from_jsonable(sample_n: number[][][]) {
     return sample_n;
   }
-
 }

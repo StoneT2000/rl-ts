@@ -1,4 +1,3 @@
-
 export class Graph {
   static test: number;
   constructor() {

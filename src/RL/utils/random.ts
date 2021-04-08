@@ -1,4 +1,4 @@
-import seedrandom from "seedrandom";
+import seedrandom from 'seedrandom';
 
 export interface prng {
   (): number;
@@ -9,5 +9,5 @@ export interface prng {
 }
 
 export const randomRange = (rng: prng, low: number, high: number) => {
-  return rng.double() * (high - low)  + low;
-}
+  return rng.double() * (high - low) + low;
+};

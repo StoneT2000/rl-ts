@@ -9,7 +9,8 @@
     "build:es5": "tsc --build tsconfig.json",
     "build": "npm run build:es5 && npm run build:es6",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --fix --ext .ts"
+    "lint:fix": "eslint . --fix --ext .ts",
+    "prettier": "prettier --write ."
   },
   "keywords": [],
   "author": "",
@@ -23,6 +24,7 @@
     "eslint": "^7.23.0",
     "mocha": "^8.3.2",
     "nyc": "^15.1.0",
+    "prettier": "^2.2.1",
     "ts-node": "^9.1.1",
     "typedoc": "^0.20.28",
     "typescript": "^4.1.5"

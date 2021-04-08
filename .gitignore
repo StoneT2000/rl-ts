@@ -3,6 +3,10 @@ node_modules
 lib
 docs
 
+# test artifacts
+coverage
+.nyc_output
+
 # for macs
 .DS_Store
 

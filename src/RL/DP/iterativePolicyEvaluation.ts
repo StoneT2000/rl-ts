@@ -11,6 +11,9 @@ export class IterativePolicyEvaluation<ActionSpace extends Space<Action>, Observ
     super();
     this.env = env;
   }
+  train(steps: number): void {
+    
+  }
   action(observation: State): Action {
     let hash = this.hashState(observation);
     let choice = this.valueActionFunction.get(hash);

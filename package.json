@@ -2,9 +2,9 @@
   "name": "rl-ts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/es6/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es6": "tsc --build tsconfig-es6.json",
     "build:es5": "tsc --build tsconfig.json",
     "build": "npm run build:es5 && npm run build:es6",

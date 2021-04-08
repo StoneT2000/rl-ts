@@ -4,7 +4,7 @@ import { randomRange } from "../utils/random";
 export class Box2D extends Space<number[][]> {
   constructor(public low: number, public high: number, shape: Shape) {
     super(shape);
-    if (shape.length != 2) {
+    if (shape.length !== 2) {
       throw new Error("Shape must be 2D");
     }
   }
@@ -19,13 +19,25 @@ export class Box2D extends Space<number[][]> {
     return sample;
   }
   contains(x: number[][]): boolean {
-    throw new Error("Method not implemented.");
+    // verify shape
+    if (x.length !== this.shape[0] || x[0].length !== this.shape[1]) {
+      return false;
+    }
+    // verify contents
+    for (let i = 0; i < this.shape[0]; i++) {
+      for (let j = 0; j < this.shape[1]; j++) {
+        if (x[i][j] < this.low || x[i][j] > this.high) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
   to_jsonable(sample_n: number[][][]) {
-    throw new Error("Method not implemented.");
+    return sample_n;
   }
   from_jsonable(sample_n: number[][][]) {
-    throw new Error("Method not implemented.");
+    return sample_n;
   }
 
 }

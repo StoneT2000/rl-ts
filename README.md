@@ -2,6 +2,16 @@
 
 This is a RL library built with **typescript**, enabling faster bug-free development and scalability and more.
 
+Install with 
+
+```
+npm install rl-ts
+```
+
+Web package that you can import using `<script></script>` coming soon!
+
+To get started - WIP
+
 ## Features
 
 - Uses a **Open AI Gym** like interface to provide an accessible and general approach for developing environments and testing models
@@ -21,3 +31,23 @@ Inspired by [Andrej Karpath's blog post](http://karpathy.github.io/2016/05/31/rl
 ## Road map and plans
 
 This library aims to be effectively a combination of the Open AI Gym and a miniature Stable Baselines, with more emphasis on naive RL algorithms to be used as a educational resource and help build more powerful visualizers that are much more accessible.
+
+## Development
+
+First install all necessary dependencies via 
+
+```
+npm i
+```
+
+To build the library run
+
+```
+npm run build
+```
+
+To run tests run
+
+```
+npm run tests
+```

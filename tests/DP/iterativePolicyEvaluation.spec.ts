@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { DP, Environments } from '../../src';
+import { DP } from '../../src';
+import { IterativePolicyEvaluation } from '../../src/RL/DP/iterativePolicyEvaluation';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
@@ -10,45 +11,34 @@ describe('Test Iterative Policy Evaluation', () => {
       { x: 3, y: 3 },
       { x: 0, y: 0 },
     ];
-    let env = new Environments.Examples.SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
+    let env = new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
 
     // the equiprobably policy
-    let policy = (action: number, state: number[][]) => {
+    let policy = (action: number, state: typeof env.state) => {
       return 0.25;
     };
 
     // this definition of dynamics is sufficient as the environment is completely deterministic and we know many priors
     // To be more rigorous, you could check the actual probability of reaching successorState by applying the given action to state
-    let dynamics = (sucessorState: number[][], reward: number, state: number[][], action: number) => {
+    let dynamics = (sucessorState: typeof env.state, reward: number, state: typeof env.state, action: number) => {
       if (reward == 0) return 1;
       else {
-        // check where agent is
-        let agentPos = null;
-        for (let y = 0; y < env.height; y++) {
-          for (let x = 0; x < env.width; x++) {
-            if (state[y][x] == 2) {
-              agentPos = { x: x, y: y };
-            }
-          }
-        }
-        if (agentPos) {
-          if (env.posIsInTargetPositions(agentPos)) {
-            return 0;
-          }
+        if (env.posIsInTargetPositions(state.agentPos)) {
+          return 0;
         }
       }
       return 1;
     };
 
     let envToStateRep = (env: SimpleGridWorld) => {
-      return env.agentPos.x + env.agentPos.y * Math.max(width, height);
+      return env.state.agentPos.x + env.state.agentPos.y * Math.max(width, height);
     };
     let envFromStateRep = (stateString: string) => {
       let hash = parseInt(stateString);
       let m = Math.max(width, height);
       let x = hash % m;
       let y = Math.floor(hash / m);
-      return new Environments.Examples.SimpleGridWorld(width, height, targetPositions, { x, y });
+      return new SimpleGridWorld(width, height, targetPositions, { x, y });
     };
     let allStateReps = [];
     for (let x = 0; x < env.width; x++) {

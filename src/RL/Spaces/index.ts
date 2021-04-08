@@ -2,11 +2,14 @@ import seedrandom from 'seedrandom';
 import { prng } from '../utils/random';
 
 export type Shape = number[];
+/**
+ * Abstract Space class. T is the type of data stored
+ */
 export abstract class Space<T> {
   // public static Box2D = Box2D;
 
   public rng: prng = seedrandom();
-  constructor(public shape: Shape) {}
+  constructor() {}
   abstract sample(): T;
   abstract contains(x: T): boolean;
   abstract to_jsonable(sample_n: T[]): any;
@@ -17,3 +20,4 @@ export abstract class Space<T> {
 }
 export { Box2D } from './box';
 export { Discrete } from './discrete';
+export {Dict} from './dict';

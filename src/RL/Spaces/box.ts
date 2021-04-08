@@ -2,8 +2,8 @@ import { Shape, Space } from '.';
 import { randomRange } from '../utils/random';
 
 export class Box2D extends Space<number[][]> {
-  constructor(public low: number, public high: number, shape: Shape) {
-    super(shape);
+  constructor(public low: number, public high: number, public shape: Shape) {
+    super();
     if (shape.length !== 2) {
       throw new Error('Shape must be 2D');
     }

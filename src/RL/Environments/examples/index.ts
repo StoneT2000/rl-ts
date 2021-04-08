@@ -1,0 +1,1 @@
+export { SimpleGridWorld } from "./simpleGridWorld";

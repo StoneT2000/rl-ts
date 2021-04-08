@@ -1,5 +1,5 @@
 import { Space } from '../Spaces';
-type RenderModes = 'human' | 'ansi' | 'rgb_array';
+export type RenderModes = 'human' | 'ansi' | 'rgb_array';
 export abstract class Environment<
   ActionSpace extends Space<Action>,
   ObservationSpace extends Space<State>,
@@ -17,12 +17,12 @@ export abstract class Environment<
    *  done: boolean
    * }
    */
-  abstract step(action: Action): { observation: State; reward: Reward; done: boolean };
+  abstract step(action: Action): { observation: State; reward: Reward; done: boolean, info?: any };
 
   /**
    * Resets the environment
    */
-  abstract reset(): void;
+  abstract reset(): State;
 
   /**
    * Renders the environment
@@ -33,3 +33,5 @@ export abstract class Environment<
   public abstract actionSpace: ActionSpace;
   public abstract observationSpace: ObservationSpace;
 }
+
+export * as Examples from "./examples";

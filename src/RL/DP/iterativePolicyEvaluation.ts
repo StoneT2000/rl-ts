@@ -1,5 +1,5 @@
 import { Agent } from '../Agent';
-import { Environment } from '../Environment';
+import { Environment } from '../Environments';
 import { Space } from '../Spaces';
 
 export class IterativePolicyEvaluation<

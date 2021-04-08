@@ -16,3 +16,4 @@ export abstract class Space<T> {
   }
 }
 export { Box2D } from './box';
+export { Discrete } from './discrete';

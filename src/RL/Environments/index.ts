@@ -17,7 +17,7 @@ export abstract class Environment<
    *  done: boolean
    * }
    */
-  abstract step(action: Action): { observation: State; reward: Reward; done: boolean, info?: any };
+  abstract step(action: Action): { observation: State; reward: Reward; done: boolean; info?: any };
 
   /**
    * Resets the environment
@@ -34,4 +34,4 @@ export abstract class Environment<
   public abstract observationSpace: ObservationSpace;
 }
 
-export * as Examples from "./examples";
+export * as Examples from './examples';

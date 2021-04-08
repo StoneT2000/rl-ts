@@ -1,1 +1,1 @@
-export { SimpleGridWorld } from "./simpleGridWorld";
+export { SimpleGridWorld } from './simpleGridWorld';

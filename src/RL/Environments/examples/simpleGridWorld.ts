@@ -49,19 +49,18 @@ export class SimpleGridWorld extends Environment<Discrete, Box2D, Action, State,
     }
     if (this.posIsInTargetPositions(this.agentPos)) {
       done = true;
-      reward = 0;
     }
     return {
-      observation: this.grid,
+      observation: this.get_obs(),
       reward,
       done,
       info: { width: this.width, height: this.height },
     };
   }
-  private posIsInTargetPositions(pos: Position) {
+  posIsInTargetPositions(pos: Position) {
     return this.targetPositions.some((target) => target.x == pos.x && target.y == pos.y);
   }
-  private posOnGrid(pos: Position) {
+  posOnGrid(pos: Position) {
     return !(pos.x < 0 || pos.y < 0 || pos.x >= this.width || pos.y >= this.height);
   }
   private translate(pos: Position, action: Action) {
@@ -82,10 +81,13 @@ export class SimpleGridWorld extends Environment<Discrete, Box2D, Action, State,
     this.grid = this.genGrid();
     this.agentPos = this.startPosition;
     this.grid[this.agentPos.y][this.agentPos.x] = 2;
-    return this.grid;
+    return this.get_obs();
+  }
+  private get_obs(): State {
+    return JSON.parse(JSON.stringify(this.grid));
   }
   render(mode: RenderModes): void {
-    if (mode === "human") {
+    if (mode === 'human') {
       for (let y = 0; y < this.height; y++) {
         console.log(this.grid[y]);
       }

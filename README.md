@@ -1,5 +1,7 @@
 # Typescript Reinforcement Learning Library 🤖
 
+[![npm version](https://badge.fury.io/js/rl-ts.svg)](https://badge.fury.io/js/rl-ts)
+
 This is a RL library built with **typescript**, enabling faster bug-free development and scalability and more.
 
 Install with 

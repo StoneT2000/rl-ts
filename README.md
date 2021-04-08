@@ -28,7 +28,7 @@ Why RL with typescript / javascript (TS/JS)? TS/JS powers the web and a ton of t
 While indeed production level reinforcement deep learning should be done with python / C++, TS/JS makes it easy to directly integrate RL 
 into the browser and serve not only as a simple integration for visualizers, but also as a powerful web-based teaching tool on RL. Moreover, this library can help developers with a background in TS/JS ease their way into using python / C++ for RL.
 
-Inspired by [Andrej Karpath's blog post](http://karpathy.github.io/2016/05/31/rl/), I'm building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained. Typescript enables typing which massively improves the scalability and maintainability of this library.
+Inspired by [Andrej Karpathy's blog post](http://karpathy.github.io/2016/05/31/rl/), I'm building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained. Typescript enables typing which massively improves the scalability and maintainability of this library.
 
 ## Road map and plans
 

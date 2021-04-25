@@ -22,7 +22,7 @@ To get started - WIP
 
 - Provides a toolbox of agents
 
-- Did I mention that it's written in **typescript**? That means types! Less bugs!
+- Did I mention that it's written in **typescript**? That means types! Less bugs! And powerful, easily buildable, visuals!
 
 Why RL with typescript / javascript (TS/JS)? TS/JS powers the web and a ton of the awesome visuals you see online.
 While indeed production level reinforcement deep learning should be done with python / C++, TS/JS makes it easy to directly integrate RL

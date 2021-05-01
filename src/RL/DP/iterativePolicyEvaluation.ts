@@ -14,11 +14,17 @@ export class IterativePolicyEvaluation<
   public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
   constructor(
     env: Environment<ActionSpace, ObservationSpace, Action, State, number>,
-    public envToStateRep: (envToConvert: typeof env) => any,
+    /** Function to map environment to a hashable state representation */
+    public envToStateRep: (envToConvert: any) => any,
+    /** Function to map state representation to a usable environment of the same class as this evaluator was constructed with */
     public envFromStateRep: (stateString: any) => typeof env,
+    /** A list of all possible state representations */
     public allStateReps: any[],
+    /** The policy function to evaluate */
     public policy: (action: Action, observation: State) => number,
+    /** The dynamics of the environment */
     public dynamics: (sucessorState: State, reward: number, state: State, action: Action) => number,
+    /** A list of all possible valid actions */
     public allPossibleActions: Action[]
   ) {
     super();

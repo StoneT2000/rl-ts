@@ -50,7 +50,6 @@ describe('Test Iterative Policy Evaluation', () => {
     }
     let policyEvaluator = new DP.IterativePolicyEvaluation(
       env,
-      //@ts-ignore;
       envToStateRep,
       envFromStateRep,
       allStateReps,

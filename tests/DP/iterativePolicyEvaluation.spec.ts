@@ -4,7 +4,7 @@ import { IterativePolicyEvaluation } from '../../src/RL/DP/iterativePolicyEvalua
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
-  it('Should solve simple grid world for equiprobable policy', () => {
+  it.only('should evaluate equiprobable policy on simple grid world correctly', () => {
     let width = 4;
     let height = 4;
     let targetPositions = [
@@ -13,7 +13,7 @@ describe('Test Iterative Policy Evaluation', () => {
     ];
     let env = new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
 
-    // the equiprobably policy
+    // the equiprobable policy
     let policy = (action: number, state: typeof env.state) => {
       return 0.25;
     };
@@ -57,7 +57,10 @@ describe('Test Iterative Policy Evaluation', () => {
       dynamics,
       [0, 1, 2, 3]
     );
-    policyEvaluator.train(10);
+    policyEvaluator.train({
+      verbose: false,
+      steps: 10,
+    });
 
     let gtVals = [
       0.0,

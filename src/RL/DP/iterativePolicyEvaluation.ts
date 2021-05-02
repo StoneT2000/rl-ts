@@ -8,10 +8,11 @@ export class IterativePolicyEvaluation<
   ObservationSpace extends Space<State>,
   Action,
   State
-> extends Agent<State, Action> {
+> {
   public env: Environment<ActionSpace, ObservationSpace, Action, State, number>;
   public valueFunction: Map<any, number> = new Map();
   public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
+  public dynamics: (sucessorState: State, reward: number, state: State, action: Action) => number;
   constructor(
     env: Environment<ActionSpace, ObservationSpace, Action, State, number>,
     /** Function to map environment to a hashable state representation */
@@ -22,19 +23,23 @@ export class IterativePolicyEvaluation<
     public allStateReps: any[],
     /** The policy function to evaluate */
     public policy: (action: Action, observation: State) => number,
-    /** The dynamics of the environment */
-    public dynamics: (sucessorState: State, reward: number, state: State, action: Action) => number,
     /** A list of all possible valid actions */
-    public allPossibleActions: Action[]
+    public allPossibleActions: Action[],
+    /** The dynamics of the environment. Does not to be given if environment has predefined dynamics */
+    dynamics?: (sucessorState: State, reward: number, state: State, action: Action) => number,
   ) {
-    super();
     this.env = env;
     allStateReps.forEach((s) => {
       this.valueFunction.set(s, 0);
     });
+    if (!dynamics) {
+      this.dynamics = this.env.dynamics;
+    } else {
+      this.dynamics = dynamics;
+    }
   }
   /**
-   * Train the value function
+   * Estimates the value function of the given policy
    * @param params - the parameters object
    * @param params.epsilon - how accurate estimates are calculated - @default `1e-3`
    * @param params.steps - if set to positive integer, will train for this many number of steps regardless of epsilon choice - @default `undefined`
@@ -72,6 +77,9 @@ export class IterativePolicyEvaluation<
           let sp_stateString = this.envToStateRep(s);
 
           let v_pi_sp = this.valueFunction.get(sp_stateString)!;
+
+          // bind dynamics function to the current used environment
+          this.dynamics = this.dynamics.bind(s);
           let p_sp_s_r = this.dynamics(stepOut.observation, reward, observation, action);
           v_pi_s += p_srsa * p_sp_s_r * (reward + 1 * v_pi_sp);
         }
@@ -91,14 +99,5 @@ export class IterativePolicyEvaluation<
         break;
       }
     }
-  }
-  action(observation: State): Action {
-    let hash = this.hashState(observation);
-    let choice = this.valueActionFunction.get(hash);
-    if (!choice) return this.env.actionSpace.sample();
-    return choice.action;
-  }
-  private hashState(observation: State): string {
-    return JSON.stringify(this.env.observationSpace.to_jsonable([observation])[0]);
   }
 }

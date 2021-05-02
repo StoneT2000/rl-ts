@@ -45,6 +45,14 @@ export abstract class Environment<
     throw new Error("Environment dynamics not implemented / provided");
   }
 
+  /**
+   * Environements can override this function to let users seed environments with a number
+   * @param seed - seed number
+   */
+  public seed(seed: number): void {
+    return;
+  }
+
   public abstract actionSpace: ActionSpace;
   public abstract observationSpace: ObservationSpace;
 }

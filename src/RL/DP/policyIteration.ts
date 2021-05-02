@@ -53,6 +53,9 @@ export class PolicyIteration<
       this.policyStateToActionMap.set(s, a);
     });
   }
+  seed(seed: number) {
+    this.rng = seedrandom(`${seed}`);
+  }
   policy(observation: State): Action {
     let s = this.configs.envFromStateRep(observation);
     let stateRep = this.configs.envToStateRep(s);

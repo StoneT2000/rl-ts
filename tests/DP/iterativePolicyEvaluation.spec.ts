@@ -36,14 +36,13 @@ describe('Test Iterative Policy Evaluation', () => {
         allStateReps.push(envToStateRep(env));
       }
     }
-    let policyEvaluator = new DP.IterativePolicyEvaluation(
-      env,
+    let policyEvaluator = new DP.IterativePolicyEvaluation({
       envToStateRep,
       envFromStateRep,
       allStateReps,
       policy,
-      [0, 1, 2, 3]
-    );
+      allPossibleActions: [0, 1, 2, 3],
+    });
     policyEvaluator.train({
       verbose: false,
       steps: 10,

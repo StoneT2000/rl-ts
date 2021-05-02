@@ -1,3 +1,4 @@
+import { DP } from './DP';
 import { Graph } from './Graph';
 
 /**
@@ -7,4 +8,5 @@ import { Graph } from './Graph';
  */
 export class RL {
   public static Graph = Graph;
+  public static DP = DP;
 }

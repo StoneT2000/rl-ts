@@ -1,18 +1,28 @@
 import { Environment, RenderModes } from '..';
+import { NotImplementedError } from '../../Errors';
 import { Box2D, Dict, Discrete } from '../../Spaces';
 
 type State = { grid: number[][]; agentPos: Position };
 type Action = number;
 type Position = { x: number; y: number };
+type ActionSpace = Discrete;
 type ObservationSpace = Dict<State>;
+type Reward = number;
+const TERMINAL = 1;
+const NON_TERMINAL = 0;
 
 /**
  * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton
  */
-export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Action, State, number> {
+export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, Action, State, Reward> {
   // TODO: Expand gridworld to have other kinds of rewards and states (e.g. keys, chests, lava etc...)
 
-  /** a 2D array with 0 representing a non-terminal tile/state and 1 representing a terminal tile, 2 representing position of agent */
+  /** 
+   * {
+   *    grid: a 2D array with 0 representing a non-terminal tile/state and 1 representing a terminal tile
+   *    agentPos: Position of the agent in the environmnet in the form { x: number, y: number }
+   * }
+   */
   public observationSpace: ObservationSpace;
   /** 0, 1, 2, 3 represent North, East, South, West directions */
   public actionSpace = new Discrete(4);
@@ -27,7 +37,7 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
   ) {
     super();
     this.observationSpace = new Dict({
-      grid: new Box2D(0, 1, [2, 2]),
+      grid: new Box2D(0, 1, [width, height]),
       agentPos: new Dict({
         x: new Discrete(4),
         y: new Discrete(4),
@@ -53,7 +63,7 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
       done = true;
     }
     return {
-      observation: this.get_obs(),
+      observation: this.getObs(),
       reward,
       done,
       info: { width: this.width, height: this.height },
@@ -81,18 +91,19 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
   }
   reset(): State {
     this.state = this.genState();
-    return this.get_obs();
+    return this.getObs();
   }
-  private get_obs(): State {
+  private getObs(): State {
     return JSON.parse(JSON.stringify(this.state));
   }
   render(mode: RenderModes): void {
-    let obs = this.get_obs();
-    obs.grid[obs.agentPos.y][obs.agentPos.x] = 2;
+    let obs = this.getObs();
     if (mode === 'human') {
       for (let y = 0; y < this.height; y++) {
         console.log(obs.grid[y]);
       }
+    } else {
+      throw new NotImplementedError("");
     }
   }
   private genState(): State {
@@ -105,12 +116,31 @@ export class SimpleGridWorld extends Environment<Discrete, ObservationSpace, Act
     for (let y = 0; y < this.height; y++) {
       grid[y] = new Array(this.width);
       for (let x = 0; x < this.width; x++) {
-        grid[y][x] = 0;
+        grid[y][x] = NON_TERMINAL;
       }
     }
     this.targetPositions.forEach((pos) => {
-      grid[pos.y][pos.x] = 1;
+      grid[pos.y][pos.x] = TERMINAL;
     });
     return grid;
   }
+  /**
+   * Defines the dynamics of SimpleGridWorld
+   * 
+   * Note that this expects the state is well-formed and not inconsistent
+   */
+  dynamics(sucessorState: State, reward: Reward, state: State, action: Action) {
+    if (reward !== -1) return 0; // reward is always -1;
+    
+    let {x, y} = this.translate(state.agentPos, action);
+    if (!this.posOnGrid({x, y})) {
+      if (sucessorState.agentPos.x !== state.agentPos.x || sucessorState.agentPos.y !== state.agentPos.y) {
+        return 0;
+      }
+    };
+    if (this.posIsInTargetPositions(state.agentPos)) {
+      return 0; // if in target position, episode is over, there can be no more actions
+    }
+    return 1;
+  };
 }

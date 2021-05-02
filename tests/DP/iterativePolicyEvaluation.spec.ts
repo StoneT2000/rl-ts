@@ -18,18 +18,6 @@ describe('Test Iterative Policy Evaluation', () => {
       return 0.25;
     };
 
-    // this definition of dynamics is sufficient as the environment is completely deterministic and we know many priors
-    // To be more rigorous, you could check the actual probability of reaching successorState by applying the given action to state
-    let dynamics = (sucessorState: typeof env.state, reward: number, state: typeof env.state, action: number) => {
-      if (reward == 0) return 1;
-      else {
-        if (env.posIsInTargetPositions(state.agentPos)) {
-          return 0;
-        }
-      }
-      return 1;
-    };
-
     let envToStateRep = (env: SimpleGridWorld) => {
       return env.state.agentPos.x + env.state.agentPos.y * Math.max(width, height);
     };
@@ -54,7 +42,6 @@ describe('Test Iterative Policy Evaluation', () => {
       envFromStateRep,
       allStateReps,
       policy,
-      dynamics,
       [0, 1, 2, 3]
     );
     policyEvaluator.train({

@@ -1,3 +1,4 @@
+import { NotImplementedError } from '../Errors';
 import { Space } from '../Spaces';
 export type RenderModes = 'human' | 'ansi' | 'rgb_array';
 export abstract class Environment<
@@ -7,6 +8,12 @@ export abstract class Environment<
   State,
   Reward
 > {
+  constructor() {
+    process.on("exit", () => {
+      this.close();
+    });
+  }
+
   /**
    * Step forward in time by one time step and process the action
    * @param action - the action to perform in the environment
@@ -42,7 +49,7 @@ export abstract class Environment<
    * @param action - a - action a to be taken
    */
   public dynamics(sucessorState: State, reward: number, state: State, action: Action): number {
-    throw new Error("Environment dynamics not implemented / provided");
+    throw new NotImplementedError("Environment dynamics not implemented / provided");
   }
 
   /**
@@ -50,6 +57,11 @@ export abstract class Environment<
    * @param seed - seed number
    */
   public seed(seed: number): void {
+    return;
+  }
+
+  /** Environments can override this function to let users clean up an environment. This is automatically run whenever a process exits */
+  public close(): void {
     return;
   }
 

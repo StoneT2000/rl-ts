@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --fix --ext .ts",
     "report": "nyc report",
     "codecov": "nyc report --reporter=text-lcov > coverage.lcov",
-    "prettier": "prettier --write .",
+    "prettier": "prettier --write ./src ./tests",
+    "prettier:check": "prettier -c ./src ./tests",
     "docs": "typedoc src/index.ts"
   },
   "keywords": [],

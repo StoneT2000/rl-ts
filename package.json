@@ -10,6 +10,8 @@
     "build": "npm run build:es5 && npm run build:es6",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
+    "report": "nyc report",
+    "codecov": "nyc report --reporter=text-lcov > coverage.lcov",
     "prettier": "prettier --write .",
     "docs": "typedoc src/index.ts"
   },

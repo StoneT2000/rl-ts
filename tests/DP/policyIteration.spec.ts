@@ -65,7 +65,7 @@ describe('Test Policy Iteration', () => {
           optimalActions.push(3);
         }
       }
-      expect(optimalActions).to.contain(policyIteration.action(obs));
+      expect(optimalActions).to.contain(policyIteration.act(obs));
     });
   });
 });

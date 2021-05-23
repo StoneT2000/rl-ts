@@ -1,11 +1,12 @@
 /** File contains implementations of basic numpy operations using ndarray */
 import { Tensor } from '@tensorflow/tfjs-core';
-import ndarray, {NdArray} from 'ndarray';
+import ndarray, { NdArray } from 'ndarray';
 import ops from 'ndarray-ops';
+// eslint-disable-next-line
 //@ts-ignore
-import pack from 'ndarray-pack';
+import _pack from 'ndarray-pack';
 
-
+export const pack: (arr: Array<any>) => NdArray<any> = _pack;
 
 export const types = {
   float32: Float32Array,
@@ -15,9 +16,8 @@ export const types = {
   int8: Int8Array,
   uint8: Uint8Array,
   string: Array,
-}
+};
 type DType = keyof typeof types;
-
 
 export const reduceMult = (arr: number[] | ndarray.NdArray): number => {
   let m: number[];
@@ -31,20 +31,20 @@ export const reduceMult = (arr: number[] | ndarray.NdArray): number => {
     ret *= v;
   }
   return ret;
-}
+};
 
-export const zeros = (shape: number[], dtype: DType = "float32") => {
+export const zeros = (shape: number[], dtype: DType = 'float32') => {
   return ndarray(new types[dtype](reduceMult(shape)), shape);
-}
+};
 
 /**
  * Converts tensor to NdArray
- * @param tensor 
+ * @param tensor
  */
 export const fromTensor = async (tensor: Tensor) => {
-  let data = await tensor.data();
+  const data = await tensor.data();
   return ndarray(data, tensor.shape);
-}
+};
 
 export const arrayEqual = <T>(arr1: T[], arr2: T[]): boolean => {
   if (arr1.length !== arr2.length) return false;
@@ -52,29 +52,31 @@ export const arrayEqual = <T>(arr1: T[], arr2: T[]): boolean => {
     if (arr1[i] !== arr2[i]) return false;
   }
   return true;
-}
-
+};
 
 /**
  * A better set function that allows setting other NdArrays
- * 
+ *
  * Not in place
- * 
- * @param arr 
+ *
+ * @param arr
  */
 export const set = (src: NdArray, index: number[], val: NdArray<any>): NdArray => {
   // verify shapes are valid
-  if (index.length > src.shape.length) throw new Error(`Indexing tried to index ${index.length} dimensions but src array has only ${src.shape.length} dimensions`)
+  if (index.length > src.shape.length)
+    throw new Error(
+      `Indexing tried to index ${index.length} dimensions but src array has only ${src.shape.length} dimensions`
+    );
   if (index.length === src.shape.length) {
     // if indexing a single value, allow any value to be set provides it fits in dimensions
     if (!arrayEqual(val.shape, [1])) {
-      throw new Error("Only size-1 arrays can be converted to a scalar");
+      throw new Error('Only size-1 arrays can be converted to a scalar');
     } else {
       src.set(...index, val.get(0));
       return src;
     }
   } else {
-    let requiredShape = src.shape.slice(index.length);
+    const requiredShape = src.shape.slice(index.length);
 
     if (reduceMult(val.shape) !== reduceMult(requiredShape)) {
       throw new Error(`Cannot broadcast input array from shape ${val.shape} to ${requiredShape}`);
@@ -86,9 +88,20 @@ export const set = (src: NdArray, index: number[], val: NdArray<any>): NdArray =
         throw new Error(`Index ${d} out of bounds in ${i}th dimension of source array with shape ${src.shape}`);
       }
     }
-    
-    let subDest = src.pick(...index);
+
+    const subDest = src.pick(...index);
     ops.assign(subDest, val);
     return src;
-  };
-}
+  }
+};
+
+const a = zeros([3, 2, 2]);
+console.log(a);
+// let b = ndarray([[20, 30], [3,4]],[2,2])
+const b = pack([
+  [20, 3],
+  [4, 2],
+]);
+// console.log(b.shape)
+const c = set(a, [0], b);
+console.log(a, c);

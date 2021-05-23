@@ -11,21 +11,12 @@ export const deepMerge = (obj1: any, obj2: any, clobberArrays = false): any => {
 
   rootKeys.forEach((key: string) => {
     // if obj2 field is not an object and not an array, override obj1
-    if (
-      typeof obj2[key] !== 'object' &&
-      obj2[key] &&
-      obj2[key].constructor.name !== 'Array'
-    ) {
+    if (typeof obj2[key] !== 'object' && obj2[key] && obj2[key].constructor.name !== 'Array') {
       obj1[key] = obj2[key];
     }
 
     // otherwise if obj2 field is an array and the same field in obj1 is also an array
-    else if (
-      obj2[key] &&
-      obj2[key].constructor.name == 'Array' &&
-      obj1[key] &&
-      obj1[key].constructor.name == 'Array'
-    ) {
+    else if (obj2[key] && obj2[key].constructor.name == 'Array' && obj1[key] && obj1[key].constructor.name == 'Array') {
       // replacce array if clobberArrays is set to true
       if (clobberArrays) {
         obj1[key] = obj2[key];

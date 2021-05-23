@@ -1,37 +1,16 @@
-version: 2.1
+version: '2.1'
 orbs:
-  node: circleci/node@4.4.0
-  codecov: codecov/codecov@1.0.2
-
+  node: circleci/node@4.4
 jobs:
-  lint:
-    docker:
-      - image: 'cimg/base:stable'
+  test:
+    executor: node/default
     steps:
       - checkout
       - node/install-packages:
           cache-path: ~/project/node_modules
           override-ci-command: npm install
-      - run: npm run lint
-  build-and-test:
-    docker:
-      - image: 'cimg/base:stable'
-    steps:
-      - node/install-packages:
-          cache-path: ~/project/node_modules
-          override-ci-command: npm install
       - run: npm run test
-      - run: npm run codecov
-      - store_artifacts:
-          path: coverage.lcov
-          destination: coverage.lcov
-
-      - codecov/upload:
-          file: coverage.lcov
 workflows:
-  build-and-test:
+  test:
     jobs:
-      - build-and-test
-  lint:
-    jobs:
-      - lint
+      - test

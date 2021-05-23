@@ -31,7 +31,7 @@ jobs:
       - store_artifacts:
           path: coverage/coverage-final.json
           destination: coverage.json
-      - codecov/upload:
+      - codecov/upload
 workflows:
   style:
     jobs:

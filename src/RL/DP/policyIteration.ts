@@ -11,7 +11,7 @@ export class PolicyIteration<
   Action,
   State
 > extends Agent<State, Action> {
-  public dynamics: null | Dynamics<State, Action>;
+  public dynamics: null | Dynamics<State, Action, number>;
   public valueFunction: Map<any, number> = new Map();
 
   public policyStateToActionMap: Map<any, Action> = new Map();
@@ -68,7 +68,7 @@ export class PolicyIteration<
    */
   private getEnvDynamics(
     env: Environment<ActionSpace, ObservationSpace, Action, State, number>
-  ): Dynamics<State, Action> {
+  ): Dynamics<State, Action, number> {
     if (this.dynamics) return this.dynamics.bind(env);
     return env.dynamics.bind(env);
   }

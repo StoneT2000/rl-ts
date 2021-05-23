@@ -2,7 +2,10 @@ import { NotImplementedError } from '../Errors';
 import { Space } from '../Spaces';
 export type RenderModes = 'human' | 'ansi' | 'rgb_array';
 
-export type Dynamics<State, Action> = (sucessorState: State, reward: number, state: State, action: Action) => number;
+export type Dynamics<State, Action, Reward> = (sucessorState: State, reward: Reward, state: State, action: Action) => number;
+
+export type StateToRep<State, Rep> = (state: State) => Rep;
+export type RepToState<State, Rep> = (rep: Rep) => State;
 
 // Extraction types to extract the generic type used in any environment
 
@@ -24,6 +27,10 @@ export abstract class Environment<
   State,
   Reward
 > {
+  /** 
+   * Construct a new environment. NOTE: it is recommended to define any state related code in the reset() 
+   * function to keep the environment episodic. Even if the environment has infinite horizon, 
+   * this is still recommended */
   constructor() {
     // TODO: check if this is okay to do as a cleanup method
     // process.on("exit", () => {
@@ -45,9 +52,13 @@ export abstract class Environment<
   abstract step(action: Action): { observation: State; reward: Reward; done: boolean; info?: any };
 
   /**
-   * Resets the environment
+   * Resets the environment to an initial state and return the initial observation
+   *
+   * Should always be called first prior to calling step
+   * 
+   * @param state - a state to load the environment with instead of generating an initial state. Note, not all environments are guranteed to use this
    */
-  abstract reset(): State;
+  abstract reset(state?: State): State;
 
   /**
    * Renders the environment
@@ -71,6 +82,24 @@ export abstract class Environment<
   }
 
   /**
+   * Hashes this environment's state into a hashable representation (rep)
+   * @param state - the state to hash. Should be the same type as the state of the environment
+   */
+  // eslint-disable-next-line
+  public stateToRep(state: State): any {
+    throw new NotImplementedError('Environment hashable state function not implemented');
+  }
+
+  /**
+   * Converts a hashable representation (rep) into a state object
+   * @param rep - the rep to convert to a state
+   */
+  // eslint-disable-next-line
+  public repToState(rep: any): State {
+    throw new NotImplementedError('Environment hashable state function not implemented');
+  }
+
+  /**
    * Environements can override this function to let users seed environments with a number
    * @param seed - seed number
    */
@@ -84,8 +113,16 @@ export abstract class Environment<
     return;
   }
 
+  /** Defines the space of actions allowable */
   public abstract actionSpace: ActionSpace;
+  /** Defines the space of observable observations. */
   public abstract observationSpace: ObservationSpace;
+
+  /** 
+   * Fully define the current state of the environment. 
+   * Avoid storing anything that is not a JS primitive, 
+   * stick to just using arrays, strings, numbers, BigInt, booleans, and Symbols */
+  public abstract state: State;
 }
 
 export * as Examples from './examples';

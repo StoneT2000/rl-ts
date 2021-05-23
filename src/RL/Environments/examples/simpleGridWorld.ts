@@ -75,6 +75,7 @@ export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, 
   posOnGrid(pos: Position) {
     return !(pos.x < 0 || pos.y < 0 || pos.x >= this.width || pos.y >= this.height);
   }
+
   private translate(pos: Position, action: Action) {
     switch (action) {
       case 0:
@@ -89,10 +90,16 @@ export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, 
         throw new Error(`Invalid action ${action}`);
     }
   }
-  reset(): State {
-    this.state = this.genState();
+
+  public reset(state?: State): State {
+    if (state) {
+      this.state = state;
+    } else {
+      this.state = this.genState();
+    }
     return this.getObs();
   }
+
   private getObs(): State {
     return JSON.parse(JSON.stringify(this.state));
   }
@@ -106,6 +113,7 @@ export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, 
       throw new NotImplementedError('');
     }
   }
+
   private genState(): State {
     const grid = this.genGrid();
     const agentPos = this.startPosition;
@@ -124,6 +132,19 @@ export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, 
     });
     return grid;
   }
+
+  public stateToRep(state: State): number {
+    return state.agentPos.x + state.agentPos.y * Math.max(state.grid.length, state.grid[0].length);
+  }
+  public repToState(rep: number): State {
+    const m = Math.max(this.width, this.height);
+    const x = rep % m;
+    const y = Math.floor(rep / m);
+    const state = this.genState();
+    state.agentPos = { x, y };
+    return state;
+  }
+
   /**
    * Defines the dynamics of SimpleGridWorld
    *

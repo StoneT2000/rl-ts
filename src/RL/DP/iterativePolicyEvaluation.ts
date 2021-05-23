@@ -1,4 +1,4 @@
-import { Dynamics, Environment } from '../Environments';
+import { Dynamics, Environment, RepToState, StateToRep } from '../Environments';
 import { Space } from '../Spaces';
 
 //TODO: Handle stochastic environments
@@ -10,31 +10,47 @@ export class IterativePolicyEvaluation<
   State
 > {
   public valueFunction: Map<any, number> = new Map();
-  public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
-  public dynamics: null | Dynamics<State, Action>;
+  // TODO: public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
+  private dynamics: Dynamics<State, Action, number>;
+  private stateToRep: StateToRep<State, any>;
+  private repToState: RepToState<State, any>;
   constructor(
+    /** Function that creates a new environment that can be reset to different states */
+    public makeEnv: () => Environment<ActionSpace, ObservationSpace, Action, State, number>,
     public configs: {
-      /** Function to map environment to a hashable state representation */
-      obsToStateRep: (state: State) => any;
-      /** Function to map state representation to a usable environment of the same class as this evaluator was constructed with */
-      envFromStateRep: (stateString: any) => Environment<ActionSpace, ObservationSpace, Action, State, number>;
+      /** Function to map environment to a hashable state representation. Required if environment does not provide this */
+      stateToRep?: StateToRep<State, any>;
+      /** Function to map state representation to a state to reset an environment to. Required if environment does not provide this */
+      repToState?: RepToState<State, any>;
       /** A list of all possible state representations */
       allStateReps: any[];
       /** The policy function to evaluate */
       policy: (action: Action, observation: State) => number;
       /** A list of all possible valid actions */
       allPossibleActions: Action[];
-      /** The dynamics of the environment. Does not to be given if environment has predefined dynamics */
-      dynamics?: (sucessorState: State, reward: number, state: State, action: Action) => number;
+      /** The dynamics of the environment. Required if environment does not provide this */
+      dynamics?: Dynamics<State, Action, number>;
     }
   ) {
     this.configs.allStateReps.forEach((s) => {
       this.valueFunction.set(s, 0);
     });
+    // create an env to test it can be created and store relevant functions
+    const env = makeEnv();
     if (!this.configs.dynamics) {
-      this.dynamics = null;
+      this.dynamics = env.dynamics;
     } else {
       this.dynamics = this.configs.dynamics;
+    }
+    if (!this.configs.stateToRep) {
+      this.stateToRep = env.stateToRep;
+    } else {
+      this.stateToRep = this.configs.stateToRep;
+    }
+    if (!this.configs.repToState) {
+      this.repToState = env.repToState;
+    } else {
+      this.repToState = this.configs.repToState;
     }
   }
   setPolicy(policy: (action: Action, observation: State) => number): void {
@@ -65,36 +81,34 @@ export class IterativePolicyEvaluation<
         console.log(`Step ${step}`);
       }
       let delta = 0;
-      for (const stateString of this.configs.allStateReps) {
-        const s = this.configs.envFromStateRep(stateString);
+      for (const rep of this.configs.allStateReps) {
+        const env = this.makeEnv();
         let v_pi_s = 0;
         for (const action of this.configs.allPossibleActions) {
-          const observation = s.reset();
-          const stepOut = s.step(action);
+          const state = this.repToState.bind(env)(rep);
+          const observation = env.reset(state);
+          const stepOut = env.step(action);
           const p_srsa = this.configs.policy(action, observation);
           const reward = stepOut.reward;
 
-          const sp_stateString = this.configs.obsToStateRep(stepOut.observation);
+          // note, we bind stateToRep because this function could be pulled from the environment and use the this keyword in it
+          const sp_stateRep = this.stateToRep.bind(env)(stepOut.observation);
 
-          const v_pi_sp = this.valueFunction.get(sp_stateString)!;
+          const v_pi_sp = this.valueFunction.get(sp_stateRep)!;
 
           // bind dynamics function to the current used environment
 
           let p_sp_s_r = 0;
-          if (this.dynamics) {
-            p_sp_s_r = this.dynamics(stepOut.observation, reward, observation, action);
-          } else {
-            p_sp_s_r = s.dynamics(stepOut.observation, reward, observation, action);
-          }
+          p_sp_s_r = this.dynamics.bind(env)(stepOut.observation, reward, observation, action);
 
           v_pi_s += p_srsa * p_sp_s_r * (reward + 1 * v_pi_sp);
         }
 
         // calculate max delta to determine stopping condition
-        const v_pi_s_old_val = this.valueFunction.get(stateString)!;
+        const v_pi_s_old_val = this.valueFunction.get(rep)!;
         delta = Math.max(delta, Math.abs(v_pi_s_old_val - v_pi_s));
 
-        updated_values.set(stateString, v_pi_s);
+        updated_values.set(rep, v_pi_s);
       }
       updated_values.forEach((v, k) => {
         this.valueFunction.set(k, v);

@@ -1,43 +1,34 @@
 import { expect } from 'chai';
 import { DP } from '../../src';
-import { ExtractStateType } from '../../src/RL/Environments';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
-  it('should evaluate equiprobable policy on simple grid world correctly', () => {
+  it.only('should evaluate equiprobable policy on simple grid world correctly', () => {
     const width = 4;
     const height = 4;
     const targetPositions = [
       { x: 3, y: 3 },
       { x: 0, y: 0 },
     ];
-    const env = new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
+    const makeEnv = () => {
+      return new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
+    }
 
     // the equiprobable policy
     const policy = () => {
       return 0.25;
     };
-    const obsToStateRep = (state: ExtractStateType<SimpleGridWorld>) => {
-      return state.agentPos.x + state.agentPos.y * Math.max(width, height);
-    };
-    const envFromStateRep = (stateString: string) => {
-      const hash = parseInt(stateString);
-      const m = Math.max(width, height);
-      const x = hash % m;
-      const y = Math.floor(hash / m);
-      return new SimpleGridWorld(width, height, targetPositions, { x, y });
-    };
+
+    const env = makeEnv();
     const allStateReps = [];
     for (let x = 0; x < env.width; x++) {
       for (let y = 0; y < env.height; y++) {
         const pos = { x: x, y: y };
         const env = new SimpleGridWorld(width, height, targetPositions, pos);
-        allStateReps.push(obsToStateRep(env.reset()));
+        allStateReps.push(env.stateToRep(env.reset()));
       }
     }
-    const policyEvaluator = new DP.IterativePolicyEvaluation({
-      obsToStateRep,
-      envFromStateRep,
+    const policyEvaluator = new DP.IterativePolicyEvaluation(makeEnv, {
       allStateReps,
       policy,
       allPossibleActions: [0, 1, 2, 3],

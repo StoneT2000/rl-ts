@@ -172,7 +172,7 @@ export class PolicyIteration<
       }
     }
   }
-  action(observation: State): Action {
+  act(observation: State): Action {
     return this.policy(observation);
   }
 }

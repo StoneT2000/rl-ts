@@ -2,14 +2,14 @@ import { Environment, RenderModes } from '..';
 import { NotImplementedError } from '../../Errors';
 import { Box2D, Dict, Discrete } from '../../Spaces';
 
-type State = { grid: number[][]; agentPos: Position };
-type Action = number;
-type Position = { x: number; y: number };
-type ActionSpace = Discrete;
-type ObservationSpace = Dict<State>;
-type Reward = number;
-const TERMINAL = 1;
-const NON_TERMINAL = 0;
+export type State = { grid: number[][]; agentPos: Position };
+export type Action = number;
+export type Position = { x: number; y: number };
+export type ActionSpace = Discrete;
+export type ObservationSpace = Dict<State>;
+export type Reward = number;
+export const TERMINAL = 1;
+export const NON_TERMINAL = 0;
 
 /**
  * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton

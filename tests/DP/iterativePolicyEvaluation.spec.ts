@@ -1,10 +1,11 @@
 import { expect } from 'chai';
 import { DP } from '../../src';
 import { IterativePolicyEvaluation } from '../../src/RL/DP/iterativePolicyEvaluation';
+import { Environment, ExtractStateType } from '../../src/RL/Environments';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
-  it.only('should evaluate equiprobable policy on simple grid world correctly', () => {
+  it('should evaluate equiprobable policy on simple grid world correctly', () => {
     let width = 4;
     let height = 4;
     let targetPositions = [
@@ -17,9 +18,8 @@ describe('Test Iterative Policy Evaluation', () => {
     let policy = (action: number, state: typeof env.state) => {
       return 0.25;
     };
-
-    let envToStateRep = (env: SimpleGridWorld) => {
-      return env.state.agentPos.x + env.state.agentPos.y * Math.max(width, height);
+    let obsToStateRep = (state: ExtractStateType<SimpleGridWorld>) => {
+      return state.agentPos.x + state.agentPos.y * Math.max(width, height);
     };
     let envFromStateRep = (stateString: string) => {
       let hash = parseInt(stateString);
@@ -33,17 +33,16 @@ describe('Test Iterative Policy Evaluation', () => {
       for (let y = 0; y < env.height; y++) {
         let pos = { x: x, y: y };
         let env = new SimpleGridWorld(width, height, targetPositions, pos);
-        allStateReps.push(envToStateRep(env));
+        allStateReps.push(obsToStateRep(env.reset()));
       }
     }
-    let policyEvaluator = new DP.IterativePolicyEvaluation(
-      env,
-      envToStateRep,
+    let policyEvaluator = new DP.IterativePolicyEvaluation({
+      obsToStateRep,
       envFromStateRep,
       allStateReps,
       policy,
-      [0, 1, 2, 3]
-    );
+      allPossibleActions: [0, 1, 2, 3],
+    });
     policyEvaluator.train({
       verbose: false,
       steps: 10,

@@ -7,4 +7,12 @@ export abstract class Agent<State, Action> {
    * @param observation
    */
   abstract action(observation: State): Action;
+
+  /**
+   * Override this function to let user's seed the agent's rng
+   * @param seed 
+   */
+  public seed(seed: number): void {
+    return;
+  }
 }

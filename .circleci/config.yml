@@ -27,9 +27,10 @@ jobs:
           cache-path: ~/project/node_modules
           override-ci-command: npm install
       - run: npm run test
+      - run: npm run codecov
       - store_artifacts:
-          path: coverage.lcov
-          destination: coverage.lcov
+          path: coverage/coverage-final.json
+          destination: coverage.json
       - codecov/upload:
           file: coverage.json
 workflows:

@@ -1,12 +1,12 @@
 version: 2.1
 orbs:
-  node: circleci/node@1.1.6
+  node: circleci/node@4.4.0
   codecov: codecov/codecov@1.0.2
 
 jobs:
   lint:
-    executor:
-      name: language-build
+    docker:
+      - image: 'cimg/base:stable'
     steps:
       - checkout
       - node/with-cache:
@@ -14,8 +14,8 @@ jobs:
             - run: npm install
             - run: npm run lint
   build-and-test:
-    executor:
-      name: language-build
+    docker:
+      - image: 'cimg/base:stable'
     steps:
       - node/with-cache:
           steps:

@@ -3,7 +3,6 @@ import { Dynamics, Environment } from '../Environments';
 import { Space } from '../Spaces';
 import seedrandom from 'seedrandom';
 import { prng } from '../utils/random';
-import { env } from 'node:process';
 
 
 // TODO: enable stochastic environments

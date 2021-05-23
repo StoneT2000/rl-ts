@@ -12,6 +12,11 @@ export type ExtractActionType<Env> = Env extends Environment<any, any, infer T, 
 export type ExtractStateType<Env> = Env extends Environment<any, any, any, infer T, any> ? T : never;
 export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any, infer T> ? T : never;
 
+/**
+ * @class Environment
+ * 
+ * A class for defining an environment that is fully observable. This is enforced by requiring the observation space return data of type state.
+ */
 export abstract class Environment<
   ActionSpace extends Space<Action>,
   ObservationSpace extends Space<State>,
@@ -20,9 +25,10 @@ export abstract class Environment<
   Reward
 > {
   constructor() {
-    process.on("exit", () => {
-      this.close();
-    });
+    // TODO: check if this is okay to do as a cleanup method
+    // process.on("exit", () => {
+    //   this.close();
+    // });
   }
 
   /**

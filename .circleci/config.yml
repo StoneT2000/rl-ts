@@ -32,7 +32,6 @@ jobs:
           path: coverage/coverage-final.json
           destination: coverage.json
       - codecov/upload:
-          file: coverage.json
 workflows:
   style:
     jobs:

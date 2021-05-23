@@ -1,4 +1,3 @@
-import { Agent } from '../Agent';
 import { Dynamics, Environment } from '../Environments';
 import { Space } from '../Spaces';
 
@@ -38,7 +37,7 @@ export class IterativePolicyEvaluation<
       this.dynamics = this.configs.dynamics;
     }
   }
-  setPolicy(policy: (action: Action, observation: State) => number) {
+  setPolicy(policy: (action: Action, observation: State) => number): void {
     this.configs.policy = policy;
   }
   /**
@@ -61,25 +60,23 @@ export class IterativePolicyEvaluation<
         // stop training if steps is provided and step > steps
         break;
       }
-      let updated_values = new Map();
+      const updated_values = new Map();
       if (verbose) {
         console.log(`Step ${step}`);
       }
       let delta = 0;
-      for (let stateString of this.configs.allStateReps) {
-        let val = 0;
-        let s = this.configs.envFromStateRep(stateString);
+      for (const stateString of this.configs.allStateReps) {
+        const s = this.configs.envFromStateRep(stateString);
         let v_pi_s = 0;
-        for (let action of this.configs.allPossibleActions) {
-          let observation = s.reset();
-          let stepOut = s.step(action);
-          let p_srsa = this.configs.policy(action, observation);
-          let reward = stepOut.reward;
-          let done = stepOut.done;
+        for (const action of this.configs.allPossibleActions) {
+          const observation = s.reset();
+          const stepOut = s.step(action);
+          const p_srsa = this.configs.policy(action, observation);
+          const reward = stepOut.reward;
 
-          let sp_stateString = this.configs.obsToStateRep(stepOut.observation);
+          const sp_stateString = this.configs.obsToStateRep(stepOut.observation);
 
-          let v_pi_sp = this.valueFunction.get(sp_stateString)!;
+          const v_pi_sp = this.valueFunction.get(sp_stateString)!;
 
           // bind dynamics function to the current used environment
 
@@ -94,7 +91,7 @@ export class IterativePolicyEvaluation<
         }
 
         // calculate max delta to determine stopping condition
-        let v_pi_s_old_val = this.valueFunction.get(stateString)!;
+        const v_pi_s_old_val = this.valueFunction.get(stateString)!;
         delta = Math.max(delta, Math.abs(v_pi_s_old_val - v_pi_s));
 
         updated_values.set(stateString, v_pi_s);

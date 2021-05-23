@@ -1,0 +1,42 @@
+version: '2.1'
+orbs:
+  node: circleci/node@4.4
+  codecov: codecov/codecov@1.2.0
+jobs:
+  lint:
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run lint
+  prettier:
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run prettier:check
+  test:
+    executor: node/default
+    steps:
+      - checkout
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run test
+      - run: npm run codecov
+      - store_artifacts:
+          path: coverage/coverage-final.json
+          destination: coverage.json
+      - codecov/upload
+workflows:
+  style:
+    jobs:
+      - lint
+      - prettier
+  test:
+    jobs:
+      - test

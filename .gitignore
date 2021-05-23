@@ -6,7 +6,7 @@ docs
 # test artifacts
 coverage
 .nyc_output
-coverage.lcov
+coverage.json
 
 # for macs
 .DS_Store

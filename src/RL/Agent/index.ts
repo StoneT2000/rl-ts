@@ -10,8 +10,9 @@ export abstract class Agent<State, Action> {
 
   /**
    * Override this function to let user's seed the agent's rng
-   * @param seed 
+   * @param seed
    */
+  // eslint-disable-next-line
   public seed(seed: number): void {
     return;
   }

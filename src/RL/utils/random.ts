@@ -8,6 +8,6 @@ export interface prng {
   state(): seedrandom.State;
 }
 
-export const randomRange = (rng: prng, low: number, high: number) => {
+export const randomRange = (rng: prng, low: number, high: number): number => {
   return rng.double() * (high - low) + low;
 };

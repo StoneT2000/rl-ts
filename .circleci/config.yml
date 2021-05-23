@@ -5,8 +5,8 @@ orbs:
 
 jobs:
   lint:
-    executor:
-      name: language-build
+    docker:
+      - image: 'cimg/base:stable'
     steps:
       - checkout
       - node/with-cache:
@@ -14,8 +14,8 @@ jobs:
             - run: npm install
             - run: npm run lint
   build-and-test:
-    executor:
-      name: language-build
+    docker:
+      - image: 'cimg/base:stable'
     steps:
       - node/with-cache:
           steps:

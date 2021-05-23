@@ -9,18 +9,18 @@ jobs:
       - image: 'cimg/base:stable'
     steps:
       - checkout
-      - node/with-cache:
-          steps:
-            - run: npm install
-            - run: npm run lint
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run lint
   build-and-test:
     docker:
       - image: 'cimg/base:stable'
     steps:
-      - node/with-cache:
-          steps:
-            - run: npm install
-            - run: npm run test
+      - node/install-packages:
+          cache-path: ~/project/node_modules
+          override-ci-command: npm install
+      - run: npm run test
       - run: npm run codecov
       - store_artifacts:
           path: coverage.lcov

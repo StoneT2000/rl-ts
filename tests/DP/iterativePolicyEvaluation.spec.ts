@@ -3,7 +3,7 @@ import { DP } from '../../src';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
-  it.only('should evaluate equiprobable policy on simple grid world correctly', () => {
+  it('should evaluate equiprobable policy on simple grid world correctly', () => {
     const width = 4;
     const height = 4;
     const targetPositions = [

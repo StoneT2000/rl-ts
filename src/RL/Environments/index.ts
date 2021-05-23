@@ -21,10 +21,10 @@ export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any,
  * A class for defining an environment that is fully observable. This is enforced by requiring the observation space return data of type state.
  */
 export abstract class Environment<
-  ActionSpace extends Space<Action>,
   ObservationSpace extends Space<State>,
-  Action,
+  ActionSpace extends Space<Action>,
   State,
+  Action,
   Reward
 > {
   /** 
@@ -70,6 +70,10 @@ export abstract class Environment<
    * The dynamics of the environment. Throws an error when called if a environment does not implement this
    *
    * Mathematically defined as P(s', r | s, a) - the probability of transitioning to state s' from s and receiving reward r after taking action a.
+   * 
+   * This should not change the environment in any way. 
+   * 
+   * Note: avoid using the "this" keyword in this function. While allowed, it may cause errors in some algorithms
    *
    * @param sucessorState - s' - the succeeding state
    * @param reward - r - the reward returned upon transitioning to s' from s using action a
@@ -82,7 +86,11 @@ export abstract class Environment<
   }
 
   /**
-   * Hashes this environment's state into a hashable representation (rep)
+   * Hashes this environment's state into a hashable representation (rep). 
+   * This should not change the environment in any way. 
+   * 
+   * Note: avoid using the "this" keyword in this function. While allowed, it may cause errors in some algorithms
+   * 
    * @param state - the state to hash. Should be the same type as the state of the environment
    */
   // eslint-disable-next-line
@@ -92,6 +100,9 @@ export abstract class Environment<
 
   /**
    * Converts a hashable representation (rep) into a state object
+   * This should not change the environment in any way. 
+   * 
+   * Note: avoid using the "this" keyword in this function. While allowed, it may cause errors in some algorithms
    * @param rep - the rep to convert to a state
    */
   // eslint-disable-next-line

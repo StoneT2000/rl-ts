@@ -14,7 +14,7 @@ export const NON_TERMINAL = 0;
 /**
  * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton
  */
-export class SimpleGridWorld extends Environment<ActionSpace, ObservationSpace, Action, State, Reward> {
+export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, State, Action, Reward> {
   // TODO: Expand gridworld to have other kinds of rewards and states (e.g. keys, chests, lava etc...)
 
   /**

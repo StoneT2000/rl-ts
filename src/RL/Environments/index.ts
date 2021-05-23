@@ -1,6 +1,17 @@
 import { NotImplementedError } from '../Errors';
 import { Space } from '../Spaces';
 export type RenderModes = 'human' | 'ansi' | 'rgb_array';
+
+export type Dynamics<State, Action> = (sucessorState: State, reward: number, state: State, action: Action) => number;
+
+// Extraction types to extract the generic type used in any environment
+
+export type ExtractActionSpaceType<Env> = Env extends Environment<infer T, any, any, any, any> ? T : never;
+export type ExtractObservationSpaceType<Env> = Env extends Environment<any, infer T, any, any, any> ? T : never;
+export type ExtractActionType<Env> = Env extends Environment<any, any, infer T, any, any> ? T : never;
+export type ExtractStateType<Env> = Env extends Environment<any, any, any, infer T, any> ? T : never;
+export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any, infer T> ? T : never;
+
 export abstract class Environment<
   ActionSpace extends Space<Action>,
   ObservationSpace extends Space<State>,

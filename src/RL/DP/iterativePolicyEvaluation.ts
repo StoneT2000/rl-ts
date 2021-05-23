@@ -1,5 +1,5 @@
 import { Agent } from '../Agent';
-import { Environment } from '../Environments';
+import { Dynamics, Environment } from '../Environments';
 import { Space } from '../Spaces';
 
 //TODO: Handle stochastic environments
@@ -12,11 +12,11 @@ export class IterativePolicyEvaluation<
 > {
   public valueFunction: Map<any, number> = new Map();
   public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
-  public dynamics: null | ((sucessorState: State, reward: number, state: State, action: Action) => number);
+  public dynamics: null | Dynamics<State, Action>;
   constructor(
     public configs: {
       /** Function to map environment to a hashable state representation */
-      envToStateRep: (envToConvert: any) => any;
+      obsToStateRep: (state: State) => any;
       /** Function to map state representation to a usable environment of the same class as this evaluator was constructed with */
       envFromStateRep: (stateString: any) => Environment<ActionSpace, ObservationSpace, Action, State, number>;
       /** A list of all possible state representations */
@@ -77,7 +77,7 @@ export class IterativePolicyEvaluation<
           let reward = stepOut.reward;
           let done = stepOut.done;
 
-          let sp_stateString = this.configs.envToStateRep(s);
+          let sp_stateString = this.configs.obsToStateRep(stepOut.observation);
 
           let v_pi_sp = this.valueFunction.get(sp_stateString)!;
 

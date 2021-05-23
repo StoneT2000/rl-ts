@@ -11,10 +11,10 @@ describe('Test Policy Iteration', () => {
       { x: 3, y: 0 },
       { x: 0, y: 0 },
     ];
-    
+
     const makeEnv = () => {
       return new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
-    }
+    };
     const env = makeEnv();
     const allStateReps = [];
     for (let x = 0; x < env.width; x++) {

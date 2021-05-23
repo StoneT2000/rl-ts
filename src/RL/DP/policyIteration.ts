@@ -11,7 +11,6 @@ export class PolicyIteration<
   Action,
   State
 > extends Agent<State, Action> {
-
   public valueFunction: Map<any, number> = new Map();
 
   public policyStateToActionMap: Map<any, Action> = new Map();

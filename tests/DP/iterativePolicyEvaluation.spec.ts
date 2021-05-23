@@ -12,7 +12,7 @@ describe('Test Iterative Policy Evaluation', () => {
     ];
     const makeEnv = () => {
       return new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
-    }
+    };
 
     // the equiprobable policy
     const policy = () => {

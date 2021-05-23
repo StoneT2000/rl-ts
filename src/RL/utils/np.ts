@@ -5,8 +5,13 @@ import ops from 'ndarray-ops';
 // eslint-disable-next-line
 //@ts-ignore
 import _pack from 'ndarray-pack';
+// eslint-disable-next-line
+//@ts-ignore
+import _unpack from 'ndarray-unpack';
+import { NotImplementedError } from '../Errors';
 
 export const pack: (arr: Array<any>) => NdArray<any> = _pack;
+export const unpack: (arr: NdArray<any>) => Array<any> = _unpack;
 
 export const types = {
   float32: Float32Array,
@@ -55,13 +60,30 @@ export const arrayEqual = <T>(arr1: T[], arr2: T[]): boolean => {
 };
 
 /**
+ * Copies arr and pushes val to the end of it and returns the copy
+ * @param arr
+ * @param val 
+ */
+export const push = (arr: NdArray<any>, val: number | NdArray): NdArray => {
+  if (typeof val === "number") {
+    if (arr.shape.length !== 1) {
+      throw new Error("Array is not a 1-dimensional vector");
+    }
+    return ndarray([...unpack(arr), val], [arr.shape[0] + 1]);
+  }
+  else {
+    throw new NotImplementedError("TODO");
+  }
+}
+
+/**
  * A better set function that allows setting other NdArrays
  *
  * Not in place
  *
  * @param arr
  */
-export const set = (src: NdArray, index: number[], val: NdArray<any>): NdArray => {
+export const set = (src: NdArray, index: number[], val: NdArray<any> | number): NdArray => {
   // verify shapes are valid
   if (index.length > src.shape.length)
     throw new Error(
@@ -69,13 +91,22 @@ export const set = (src: NdArray, index: number[], val: NdArray<any>): NdArray =
     );
   if (index.length === src.shape.length) {
     // if indexing a single value, allow any value to be set provides it fits in dimensions
-    if (!arrayEqual(val.shape, [1])) {
-      throw new Error('Only size-1 arrays can be converted to a scalar');
-    } else {
-      src.set(...index, val.get(0));
-      return src;
+    let scalar: number;
+    if (typeof val !== "number") {
+      if (!arrayEqual(val.shape, [1])) {
+        throw new Error('Only size-1 arrays can be converted to a scalar');
+      };
+      scalar = val.get(0);
     }
+    else {
+      scalar = val;
+    }
+    src.set(...index, scalar);
+    return src;
   } else {
+    if (typeof val === "number") {
+      throw new Error(`Cannot set a scalar value`);
+    }
     const requiredShape = src.shape.slice(index.length);
 
     if (reduceMult(val.shape) !== reduceMult(requiredShape)) {
@@ -95,13 +126,12 @@ export const set = (src: NdArray, index: number[], val: NdArray<any>): NdArray =
   }
 };
 
-const a = zeros([3, 2, 2]);
-console.log(a);
+// const a = zeros([4]);
+let a = ndarray([1,2,3,4],[4])
+// console.log(a);
 // let b = ndarray([[20, 30], [3,4]],[2,2])
 const b = pack([
-  [20, 3],
-  [4, 2],
+  [20, 3,4,5],
+  // [4, 2],
 ]);
-// console.log(b.shape)
-const c = set(a, [0], b);
-console.log(a, c);
+console.log(unpack(a.lo(1)));

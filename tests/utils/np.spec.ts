@@ -24,4 +24,10 @@ describe('Test numpy (in ts) utils', () => {
       expect(a.data[i]).to.equal(0);
     }
   });
+  it('should push correctly', () => {
+    const a = np.pack([2,3,4,5]);
+    const b = np.push(a, 4);
+    expect(np.arrayEqual(b.data as number[], [2,3,4,5,4])).to.equal(true);
+    expect(np.arrayEqual(a.data as number[], [2,3,4,5])).to.equal(true);
+  });
 });

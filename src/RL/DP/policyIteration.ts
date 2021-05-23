@@ -4,7 +4,6 @@ import { Space } from '../Spaces';
 import seedrandom from 'seedrandom';
 import { prng } from '../utils/random';
 
-
 // TODO: enable stochastic environments
 export class PolicyIteration<
   ActionSpace extends Space<Action>,
@@ -35,7 +34,7 @@ export class PolicyIteration<
       evaluatorConfigs: {
         epsilon: number;
         steps?: number;
-      }
+      };
     }
   ) {
     super();
@@ -48,58 +47,55 @@ export class PolicyIteration<
     // initialize value function and policy
     this.configs.allStateReps.forEach((s) => {
       this.valueFunction.set(s, 0);
-      let k = Math.floor(this.rng() * this.configs.allPossibleActions.length);
-      let a = this.configs.allPossibleActions[k];
+      const k = Math.floor(this.rng() * this.configs.allPossibleActions.length);
+      const a = this.configs.allPossibleActions[k];
       this.policyStateToActionMap.set(s, a);
     });
   }
-  seed(seed: number) {
+  seed(seed: number): void {
     this.rng = seedrandom(`${seed}`);
   }
   policy(observation: State): Action {
-    let stateRep = this.configs.obsToStateRep(observation);
-    let a = this.policyStateToActionMap.get(stateRep)!;
+    const stateRep = this.configs.obsToStateRep(observation);
+    const a = this.policyStateToActionMap.get(stateRep)!;
     return a;
-  };
+  }
 
   /**
    * Internal function used for retrieving the relevant dynamics function depending if user provided one or environment came with it.
-   * @param env 
+   * @param env
    * @returns Dynamics Function
    */
-  private getEnvDynamics(env: Environment<ActionSpace, ObservationSpace, Action, State, number>): Dynamics<State, Action> {
+  private getEnvDynamics(
+    env: Environment<ActionSpace, ObservationSpace, Action, State, number>
+  ): Dynamics<State, Action> {
     if (this.dynamics) return this.dynamics.bind(env);
     return env.dynamics.bind(env);
   }
 
-  private evaluatePolicy(params: {
-    verbose?: boolean
-  } = {
-    verbose: false
-  }) {
-    
-    let updated_values = new Map();
-    for (let step = 1;; step++) {
-      let delta = 0
+  private evaluatePolicy() {
+    const updated_values = new Map();
+    for (let step = 1; ; step++) {
+      let delta = 0;
       if (this.configs.evaluatorConfigs.steps && step >= this.configs.evaluatorConfigs.steps) {
         break;
       }
       for (const stateRep of this.configs.allStateReps) {
-        let env = this.configs.envFromStateRep(stateRep);
-        let obs = env.reset();
-        let old_v = this.valueFunction.get(stateRep)!;
+        const env = this.configs.envFromStateRep(stateRep);
+        const obs = env.reset();
+        const old_v = this.valueFunction.get(stateRep)!;
 
-        let action = this.policy(obs);
-        let stepOut = env.step(action);
-        let reward = stepOut.reward;
+        const action = this.policy(obs);
+        const stepOut = env.step(action);
+        const reward = stepOut.reward;
         // TODO for stochastic environments, we need to iterate over all possible future states
         let p_sp_r_s_a = 0;
 
         p_sp_r_s_a = this.getEnvDynamics(env)(stepOut.observation, reward, obs, action);
 
-        let sp_stateString = this.configs.obsToStateRep(stepOut.observation);
-        let v = this.valueFunction.get(sp_stateString)!;
-        let new_v = p_sp_r_s_a * (reward + this.configs.discountRate * v);
+        const sp_stateString = this.configs.obsToStateRep(stepOut.observation);
+        const v = this.valueFunction.get(sp_stateString)!;
+        const new_v = p_sp_r_s_a * (reward + this.configs.discountRate * v);
         updated_values.set(stateRep, new_v);
         delta = Math.max(delta, Math.abs(new_v - old_v));
       }
@@ -110,42 +106,42 @@ export class PolicyIteration<
         break;
       }
     }
-    
   }
 
-  train(params: {
-    untilStable: boolean;
-    verbose: boolean;
-    steps?: number;
-  } = {
-    untilStable: true,
-    verbose: true
-  }) {
-    let step = 1;
-    while(true) {
-      this.evaluatePolicy({ verbose: params.verbose });
+  train(
+    params: {
+      untilStable: boolean;
+      verbose: boolean;
+      steps?: number;
+    } = {
+      untilStable: true,
+      verbose: true,
+    }
+  ): void {
+    for (let step = 1; ; step++) {
+      this.evaluatePolicy();
       let policyStable = true;
       if (params.verbose) {
         console.log(`Step ${step}`);
       }
       for (const stateRep of this.configs.allStateReps) {
-        let env = this.configs.envFromStateRep(stateRep);
-        let obs = env.reset();
-        let oldAction = this.policy(obs);
+        const env = this.configs.envFromStateRep(stateRep);
+        const obs = env.reset();
+        const oldAction = this.policy(obs);
         let greedyAction = oldAction;
-        let bestValue: number = Number.MIN_SAFE_INTEGER
+        let bestValue: number = Number.MIN_SAFE_INTEGER;
 
         // argmax action over all s', r : p(s', r | s, a) * [r + gamma * V(s')]
         for (const action of this.configs.allPossibleActions) {
           let p_sp_r_s_a = 0;
-          let obs = env.reset();
-          let stepOut = env.step(action);
-          let reward = stepOut.reward;
+          const obs = env.reset();
+          const stepOut = env.step(action);
+          const reward = stepOut.reward;
           p_sp_r_s_a = this.getEnvDynamics(env)(stepOut.observation, reward, obs, action);
-          
-          let sp_stateString = this.configs.obsToStateRep(stepOut.observation);
-          let v_sp = this.valueFunction.get(sp_stateString)!;
-          let value = p_sp_r_s_a * (reward + this.configs.discountRate * v_sp);
+
+          const sp_stateString = this.configs.obsToStateRep(stepOut.observation);
+          const v_sp = this.valueFunction.get(sp_stateString)!;
+          const value = p_sp_r_s_a * (reward + this.configs.discountRate * v_sp);
           if (value > bestValue) {
             bestValue = value;
             greedyAction = action;
@@ -154,10 +150,8 @@ export class PolicyIteration<
         if (greedyAction !== oldAction) {
           policyStable = false;
         }
-        this.policyStateToActionMap.set(stateRep, greedyAction)
+        this.policyStateToActionMap.set(stateRep, greedyAction);
       }
-      
-      step += 1;
       if (params.steps && step >= params.steps) {
         break;
       }

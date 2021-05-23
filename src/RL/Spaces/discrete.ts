@@ -1,4 +1,4 @@
-import { Shape, Space } from '.';
+import { Space } from '.';
 import { randomRange } from '../utils/random';
 
 /**

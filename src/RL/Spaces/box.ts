@@ -9,7 +9,7 @@ export class Box2D extends Space<number[][]> {
     }
   }
   sample(): number[][] {
-    let sample: number[][] = new Array(this.shape[0]);
+    const sample: number[][] = new Array(this.shape[0]);
     for (let i = 0; i < this.shape[0]; i++) {
       sample[i] = new Array(this.shape[1]);
       for (let j = 0; j < this.shape[1]; j++) {

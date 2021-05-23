@@ -14,7 +14,7 @@ export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any,
 
 /**
  * @class Environment
- * 
+ *
  * A class for defining an environment that is fully observable. This is enforced by requiring the observation space return data of type state.
  */
 export abstract class Environment<
@@ -57,22 +57,24 @@ export abstract class Environment<
 
   /**
    * The dynamics of the environment. Throws an error when called if a environment does not implement this
-   * 
+   *
    * Mathematically defined as P(s', r | s, a) - the probability of transitioning to state s' from s and receiving reward r after taking action a.
-   * 
+   *
    * @param sucessorState - s' - the succeeding state
    * @param reward - r - the reward returned upon transitioning to s' from s using action a
    * @param state - s - the preceeding state
    * @param action - a - action a to be taken
    */
+  // eslint-disable-next-line
   public dynamics(sucessorState: State, reward: number, state: State, action: Action): number {
-    throw new NotImplementedError("Environment dynamics not implemented / provided");
+    throw new NotImplementedError('Environment dynamics not implemented / provided');
   }
 
   /**
    * Environements can override this function to let users seed environments with a number
    * @param seed - seed number
    */
+  // eslint-disable-next-line
   public seed(seed: number): void {
     return;
   }

@@ -5,13 +5,15 @@
   "main": "lib/es6/index.js",
   "scripts": {
     "test": "mocha tests/**/*.spec.ts",
+    "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es6": "tsc --build tsconfig-es6.json",
     "build:es5": "tsc --build tsconfig.json",
     "build": "npm run build:es5 && npm run build:es6",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
     "report": "nyc report",
-    "codecov": "nyc report --reporter=json",
+    "report:html": "nyc report --reporter=html",
+    "codecov": "nyc --reporter=json mocha tests/**/*.spec.ts",
     "prettier": "prettier --write ./src ./tests",
     "prettier:check": "prettier -c ./src ./tests",
     "docs": "typedoc src/index.ts"

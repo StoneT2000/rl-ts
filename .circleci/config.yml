@@ -1,6 +1,7 @@
 version: '2.1'
 orbs:
   node: circleci/node@4.4
+  codecov: codecov/codecov@1.0.2
 jobs:
   test:
     executor: node/default
@@ -10,6 +11,12 @@ jobs:
           cache-path: ~/project/node_modules
           override-ci-command: npm install
       - run: npm run test
+      - store_artifacts:
+          path: coverage.lcov
+          destination: coverage.lcov
+
+      - codecov/upload:
+          file: coverage.lcov
 workflows:
   test:
     jobs:

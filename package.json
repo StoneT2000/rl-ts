@@ -11,7 +11,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
     "report": "nyc report",
-    "codecov": "nyc report --reporter=text-lcov > coverage.lcov",
+    "codecov": "nyc report --reporter=json > coverage.json",
     "prettier": "prettier --write ./src ./tests",
     "prettier:check": "prettier -c ./src ./tests",
     "docs": "typedoc src/index.ts"

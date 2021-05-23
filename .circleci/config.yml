@@ -31,7 +31,7 @@ jobs:
           path: coverage.lcov
           destination: coverage.lcov
       - codecov/upload:
-          file: coverage.lcov
+          file: coverage.json
 workflows:
   style:
     jobs:

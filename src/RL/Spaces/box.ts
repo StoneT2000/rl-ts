@@ -4,6 +4,7 @@ import { randomRange } from '../utils/random';
 import * as np from '../utils/np';
 import ops from 'ndarray-ops';
 import * as tf from '@tensorflow/tfjs-node';
+import { NotImplementedError } from '../Errors';
 
 export class Box extends Space<NdArray<number>> {
 
@@ -114,6 +115,7 @@ export class Box extends Space<NdArray<number>> {
     //     }
     //   }
     // }
+    throw new NotImplementedError("Not implemented yet");
     return true;
   }
   to_jsonable(sample_n: NdArray[]) {

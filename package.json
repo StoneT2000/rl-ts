@@ -45,6 +45,7 @@
   ],
   "dependencies": {
     "@tensorflow/tfjs": "^3.6.0",
+    "@tensorflow/tfjs-node": "^3.6.1",
     "ndarray": "^1.0.19",
     "ndarray-pack": "^1.2.1",
     "ndarray-unpack": "^1.0.0",

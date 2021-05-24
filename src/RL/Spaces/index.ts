@@ -17,6 +17,7 @@ export abstract class Space<T> {
     this.rng = seedrandom(seed);
   }
 }
+export { Box } from './box';
 export { PrimitiveBox2D } from './primitiveBox2d';
 export { PrimitiveDiscrete } from './primitiveDiscrete';
 export { Dict } from './dict';

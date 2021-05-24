@@ -18,6 +18,26 @@ describe('Test numpy (in ts) utils', () => {
     res[res.length - 1] = 1;
     expect(np.arrayEqual(d.data as number[], res)).to.equal(true, 'should set correctly');
   });
+  it('should set by boolean mask correctly', () => {
+    let mask = np.pack([[1, 1], [0, 0]]);
+    let A = np.pack([[20, 30], [40, 50]]);
+    let val = np.pack([2, 3]);
+    let res = np.set(A, mask, val);
+    expect(np.arrayEqual(res.data as number[], [2, 3, 40, 50])).to.equal(true);
+
+    let mask2 = np.pack([[1, 1], [1, 0]]);
+    let B = np.pack([[20, 30], [40, 50]]);
+    let val2 = np.pack([2, 3, 4]);
+    let res2 = np.set(B, mask2, val2);
+    expect(np.arrayEqual(res2.data as number[], [2, 3, 4, 50])).to.equal(true);
+
+    let mask3 = np.pack([[0, 0], [0, 0]]);
+    let C = np.pack([[20, 30], [40, 50]]);
+    let val3 = np.pack([]);
+    let res3 = np.set(C, mask3, val3);
+    expect(np.arrayEqual(res3.data as number[], [20, 30, 40, 50])).to.equal(true);
+    
+  });
   it('should create a matrix of zeros correctly', () => {
     const a = np.zeros([3, 4]);
     for (let i = 0; i < a.data.length; i++) {

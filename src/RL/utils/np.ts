@@ -77,9 +77,7 @@ export const push = (arr: NdArray<any>, val: number | NdArray): NdArray => {
 }
 
 /**
- * A better set function that allows setting other NdArrays
- *
- * Not in place
+ * A better set function that allows setting other NdArrays in others in place
  *
  * @param arr
  */

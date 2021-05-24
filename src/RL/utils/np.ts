@@ -125,13 +125,3 @@ export const set = (src: NdArray, index: number[], val: NdArray<any> | number): 
     return src;
   }
 };
-
-// const a = zeros([4]);
-let a = ndarray([1,2,3,4],[4])
-// console.log(a);
-// let b = ndarray([[20, 30], [3,4]],[2,2])
-const b = pack([
-  [20, 3,4,5],
-  // [4, 2],
-]);
-console.log(unpack(a.lo(1)));

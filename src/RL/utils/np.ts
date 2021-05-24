@@ -1,5 +1,5 @@
 /** File contains implementations of basic numpy operations using ndarray */
-import { Tensor } from '@tensorflow/tfjs-core';
+import { Tensor, tensor } from '@tensorflow/tfjs-core';
 import ndarray, { NdArray } from 'ndarray';
 import ops from 'ndarray-ops';
 // eslint-disable-next-line
@@ -50,6 +50,10 @@ export const fromTensor = async (tensor: Tensor) => {
   const data = await tensor.data();
   return ndarray(data, tensor.shape);
 };
+
+export const toTensor = (x: NdArray) => {
+  return tensor(unpack(x));
+}
 
 export const arrayEqual = <T>(arr1: T[], arr2: T[]): boolean => {
   if (arr1.length !== arr2.length) return false;

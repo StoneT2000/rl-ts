@@ -1,11 +1,11 @@
 import { Environment, RenderModes } from '..';
 import { NotImplementedError } from '../../Errors';
-import { Box2D, Dict, Discrete } from '../../Spaces';
+import { PrimitiveBox2D, Dict, PrimitiveDiscrete } from '../../Spaces';
 
 export type State = { grid: number[][]; agentPos: Position };
 export type Action = number;
 export type Position = { x: number; y: number };
-export type ActionSpace = Discrete;
+export type ActionSpace = PrimitiveDiscrete;
 export type ObservationSpace = Dict<State>;
 export type Reward = number;
 export const TERMINAL = 1;
@@ -25,7 +25,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
    */
   public observationSpace: ObservationSpace;
   /** 0, 1, 2, 3 represent North, East, South, West directions */
-  public actionSpace = new Discrete(4);
+  public actionSpace = new PrimitiveDiscrete(4);
 
   public state: State;
 
@@ -37,10 +37,10 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
   ) {
     super();
     this.observationSpace = new Dict({
-      grid: new Box2D(0, 1, [width, height]),
+      grid: new PrimitiveBox2D(0, 1, [width, height]),
       agentPos: new Dict({
-        x: new Discrete(4),
-        y: new Discrete(4),
+        x: new PrimitiveDiscrete(4),
+        y: new PrimitiveDiscrete(4),
       }),
     });
     this.state = this.genState();

@@ -1,8 +1,8 @@
 import { Environment, RenderModes } from '..';
-import { NotImplementedError } from '../../Errors';
 import { Box, Discrete } from '../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../utils/random';
+import { Scalar } from '@tensorflow/tfjs-core';
 
 export type State = NdArray<number>;
 export type Action = number;
@@ -42,7 +42,8 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     this.actionSpace = new Discrete(2);
   }
   reset(): State {
-    this.state = random.random([4]);
+    this.state = random.random([4], -0.05, 0.05);
+    this.steps_beyond_done = null;
     return this.state;
   }
   step(action: Action) {

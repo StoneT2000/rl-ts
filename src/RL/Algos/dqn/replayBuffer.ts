@@ -9,6 +9,7 @@ export interface Transition<State, Action> {
   action: Action;
   reward: number;
   nextState: State;
+  done: boolean;
 }
 
 export class ReplayBuffer<State, Action> {
@@ -22,7 +23,7 @@ export class ReplayBuffer<State, Action> {
   public push(transition: Transition<State, Action>): void {
     this.memory.push(transition);
   }
-  public sample(batchSize: number): NdArray<Transition<State, Action>> {
+  public sample(batchSize: number): Array<Transition<State, Action>> {
     // TODO: use resovoir sampling for picking unique k
     let sample: Array<Transition<State, Action>> = []
     for (let i = 0; i < batchSize; i++) {
@@ -30,7 +31,7 @@ export class ReplayBuffer<State, Action> {
       let k = Math.floor(this.memory.length * (random.randomVal()));
       sample.push(this.memory.get(k)!);
     }
-    return nj.array(sample, "generic");
+    return sample;
   }
   public get length() {
     return this.memory.length;

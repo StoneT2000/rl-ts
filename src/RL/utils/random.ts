@@ -23,8 +23,8 @@ export const randomVal = () => {
 /** return array of given shape with values from [low, high] */
 export const random = (shape: number[], low: number = 0, high: number = 1) => {
   let vals = nj.zeros(shape);
-  for (let i = 0; i < vals.data.length; i++) {
-    vals.data[vals.offset + i] = rng() * (high - low) + low;
+  for (let i = 0; i < vals.size; i++) {
+    vals.selection.data[vals.selection.offset + i] = rng() * (high - low) + low;
   };
   return vals;
 };

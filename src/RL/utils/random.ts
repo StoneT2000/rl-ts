@@ -16,13 +16,15 @@ export const randomRange = (rng: prng, low: number = Number.MIN_SAFE_INTEGER, hi
 };
 
 /** return random value from [0, 1] */
-export const random = (shape?: number[]) => {
-  if (shape === undefined) {
-    return rng();
-  }
+export const randomVal = () => {
+  return rng();
+};
+
+/** return array of given shape with values from [low, high] */
+export const random = (shape: number[], low: number = 0, high: number = 1) => {
   let vals = nj.zeros(shape);
   for (let i = 0; i < vals.data.length; i++) {
-    vals.data[vals.offset + i] = rng();
+    vals.data[vals.offset + i] = rng() * (high - low) + low;
   };
   return vals;
 };

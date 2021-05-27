@@ -27,7 +27,7 @@ export class ReplayBuffer<State, Action> {
     let sample: Array<Transition<State, Action>> = []
     for (let i = 0; i < batchSize; i++) {
       // this.memory.length
-      let k = Math.floor(this.memory.length * (random.random() as number));
+      let k = Math.floor(this.memory.length * (random.randomVal()));
       sample.push(this.memory.get(k)!);
     }
     return nj.array(sample, "generic");

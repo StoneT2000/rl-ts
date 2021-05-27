@@ -97,7 +97,7 @@ export class Box extends Space<nj.NdArray<number>> {
       for (let i = 0; i < np.reduceMult(this.low.shape); i++ ) {
         let l = np.loc(this.low, i);
         let h = np.loc(this.high, i);
-        vals.data[i] = (random.random() as number) * (h - l) + l;
+        vals.data[i] = random.randomVal() * (h - l) + l;
       }
       np.set(sample, bounded, vals);
     }

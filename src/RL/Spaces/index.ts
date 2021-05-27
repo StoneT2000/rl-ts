@@ -19,5 +19,5 @@ export abstract class Space<T> {
 }
 export { Box } from './box';
 export { PrimitiveBox2D } from './primitiveBox2d';
-export { PrimitiveDiscrete } from './primitiveDiscrete';
+export { Discrete } from './discrete';
 export { Dict } from './dict';

@@ -1,6 +1,6 @@
 /** File contains implementations of basic numpy operations using ndarray */
 import { Tensor, tensor } from '@tensorflow/tfjs-core';
-import ndarray, { NdArray } from 'ndarray';
+import ndarray, { DataType } from 'ndarray';
 import ops from 'ndarray-ops';
 // eslint-disable-next-line
 //@ts-ignore
@@ -8,11 +8,21 @@ import _pack from 'ndarray-pack';
 // eslint-disable-next-line
 //@ts-ignore
 import _unpack from 'ndarray-unpack';
-import nj from 'numjs';
+import nj, {NdArray} from 'numjs';
 import { NotImplementedError } from '../Errors';
 
-export const pack: (arr: Array<any>) => NdArray<any> = _pack;
-export const unpack: (arr: NdArray<any>) => Array<any> = _unpack;
+export const pack = (arr: Array<any>, dtype?: DataType): NdArray<any> => {
+  return nj.array(arr, dtype);
+};
+export const packNp = (arr: Array<any>): ndarray.NdArray<any> => {
+  return _pack(arr);
+};
+export const unpack = (arr: NdArray<any>): Array<any> => {
+  return arr.tolist();
+}
+export const unpackNp = (arr: ndarray.NdArray<any>): Array<any> => {
+  return _unpack(arr);
+}
 
 export const types = {
   float32: Float32Array,
@@ -22,7 +32,6 @@ export const types = {
   int8: Int8Array,
   uint8: Uint8Array,
   string: Array,
-  boolean: Array,
 };
 export type dtype = keyof typeof types;
 
@@ -54,7 +63,7 @@ export const fromTensor = async (tensor: Tensor) => {
 };
 
 /**
- * Converts tensor to NdArray synchronously
+ * Converts tensor to numjs NdArray synchronously
  * @param tensor
  */
 export const fromTensorSync = (tensor: Tensor) => {
@@ -62,8 +71,21 @@ export const fromTensorSync = (tensor: Tensor) => {
   return nj.array(data, tensor.dtype as ndarray.DataType);
 };
 
+/**
+ * Converts tensor to NdArray synchronously
+ * @param tensor
+ */
+ export const fromTensorSyncToNp = (tensor: Tensor): ndarray.NdArray => {
+  const data = tensor.dataSync();
+  return ndarray(data, tensor.shape)
+};
+
 export const toTensor = (x: NdArray) => {
   return tensor(unpack(x));
+};
+
+export const toTensorFromNp = (x: ndarray.NdArray) => {
+  return tensor(_unpack(x));
 };
 
 export const arrayEqual = <T>(arr1: T[], arr2: T[]): boolean => {
@@ -84,18 +106,20 @@ export const push = (arr: NdArray<any>, val: number | NdArray): NdArray => {
     if (arr.shape.length !== 1) {
       throw new Error('Array is not a 1-dimensional vector');
     }
-    return ndarray([...unpack(arr), val], [arr.shape[0] + 1]);
+    return nj.array([...unpack(arr), val]);
   } else {
     throw new NotImplementedError('TODO');
   }
 };
+
+
 
 /**
  * A better set function that allows setting other NdArrays in others in place or using a boolean mask
  *
  * @param arr
  */
-export const set = (src: NdArray, index: number[] | NdArray<any>, val: NdArray<any> | number): NdArray => {
+export const set = (src: ndarray.NdArray, index: number[] | ndarray.NdArray<any>, val: ndarray.NdArray<any> | number): ndarray.NdArray => {
   // if index argument is a NdArray, expect it to be a boolean mask.
   if (index instanceof Array) {
     // verify shapes are valid
@@ -168,6 +192,13 @@ export const set = (src: NdArray, index: number[] | NdArray<any>, val: NdArray<a
   }
 };
 /** Gets ith value */
-export const loc = (x: NdArray, i: number) => {
+export const loc = (x: ndarray.NdArray, i: number) => {
   return x.data[x.offset + i];
+}
+
+export const fromNj = (x: NdArray): ndarray.NdArray => {
+  return _pack(x.tolist());
+}
+export const toNj = (x: ndarray.NdArray) => {
+  return nj.array(_unpack(x), x.dtype);
 }

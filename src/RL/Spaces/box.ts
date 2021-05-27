@@ -1,12 +1,13 @@
-import { NdArray } from 'ndarray';
+import { DataType, NdArray } from 'ndarray';
 import { Shape, Space } from '.';
-import { randomRange } from '../utils/random';
+import * as random from '../utils/random';
 import * as np from '../utils/np';
 import ops from 'ndarray-ops';
 import * as tf from '@tensorflow/tfjs-node';
 import { NotImplementedError } from '../Errors';
+import nj from 'numjs';
 
-export class Box extends Space<NdArray<number>> {
+export class Box extends Space<nj.NdArray<number>> {
 
   public low: null | NdArray<number>;
   public high: null | NdArray<number>;
@@ -19,15 +20,12 @@ export class Box extends Space<NdArray<number>> {
    * @param high - upper bound for all dimensions or a list of numbers representing upper bounds for each dimension of given shape
    * @param shape - the desired box shape
    */
-  constructor(low: null | number | NdArray<number>, high: null | number | NdArray<number>, public shape: Shape, public dtype: np.dtype = "float32") {
+  constructor(low: null | number | nj.NdArray<number>, high: null | number | nj.NdArray<number>, public shape: Shape, public dtype: DataType = "float32") {
     super();
-    if (dtype == "string") {
-      throw new Error("dtype of string for box space is not supported");
-    }
-    let lowerBounds: null | NdArray<number> = np.zeros(shape, dtype);
-    let upperBounds: null | NdArray<number> = np.zeros(shape, dtype);
+    let lowerBounds: null | nj.NdArray<number> = nj.zeros(shape, dtype);
+    let upperBounds: null | nj.NdArray<number> = nj.zeros(shape, dtype);
     if (typeof low === "number") {
-      ops.addseq(lowerBounds, low);
+      lowerBounds.assign(low, false);
     } else if (low === null) {
       lowerBounds = null;
     } else {
@@ -35,15 +33,16 @@ export class Box extends Space<NdArray<number>> {
       lowerBounds = low;
     }
     if (typeof high === "number") {
-      ops.addseq(upperBounds, high);
+      upperBounds.assign(high, false);
     } else if (high === null) {
       upperBounds = null;
     } else {
       if (!np.arrayEqual(upperBounds.shape, high.shape)) throw new Error(`high shape ${high.shape} does not match given shape ${shape}`);
       upperBounds = high;
     }
-    this.low = lowerBounds;
-    this.high = upperBounds;
+
+    this.low = lowerBounds ? np.fromNj(lowerBounds) : lowerBounds;
+    this.high = upperBounds ? np.fromNj(upperBounds) : upperBounds;
 
     this.boundedBelow = np.zeros(shape);
     this.boundedAbove = np.zeros(shape);
@@ -57,7 +56,7 @@ export class Box extends Space<NdArray<number>> {
       this.boundedAbove = ops.lts(this.boundedAbove, this.high, Number.MAX_SAFE_INTEGER);
     }
   }
-  sample(): NdArray<number> {
+  sample(): nj.NdArray<number> {
     let sample = np.zeros(this.shape);
     // determine which indices are lower bounded and upper bounded
     if (this.boundedBelow === null && this.boundedAbove === null) {
@@ -72,10 +71,10 @@ export class Box extends Space<NdArray<number>> {
     ops.neg(boundedAboveNeg, this.boundedAbove);
     ops.addseq(boundedAboveNeg, 1);
 
-    let unbounded = np.zeros(this.shape, "boolean");
-    let lowBounded = np.zeros(this.shape, "boolean");
-    let upperBounded = np.zeros(this.shape, "boolean");
-    let bounded = np.zeros(this.shape, "boolean");
+    let unbounded = np.zeros(this.shape, "int8");
+    let lowBounded = np.zeros(this.shape, "int8");
+    let upperBounded = np.zeros(this.shape, "int8");
+    let bounded = np.zeros(this.shape, "int8");
     
     ops.and(unbounded, boundedBelowNeg, boundedAboveNeg);
     ops.and(lowBounded, this.boundedBelow, boundedAboveNeg);
@@ -85,10 +84,12 @@ export class Box extends Space<NdArray<number>> {
     np.set(sample, unbounded, np.fromTensorSync(tf.randomNormal(this.shape)));
 
     if (this.low) {
-      np.set(sample, lowBounded, np.fromTensorSync(tf.randomGamma(this.shape, 1, 1).add(np.toTensor(this.low))));
+      
+      let val = np.fromTensorSyncToNp(tf.randomGamma(this.shape, 1, 1).add(np.toTensorFromNp(this.low)));
+      np.set(sample, lowBounded, val);
     }
     if (this.high) {
-      np.set(sample, upperBounded, np.fromTensorSync(tf.randomGamma(this.shape, 1, 1).neg().add(np.toTensor(this.high))));
+      np.set(sample, upperBounded, np.fromTensorSyncToNp(tf.randomGamma(this.shape, 1, 1).neg().add(np.toTensorFromNp(this.high))));
     }
     if (this.low && this.high) {
       // generate uniform with shape this.shape
@@ -96,11 +97,11 @@ export class Box extends Space<NdArray<number>> {
       for (let i = 0; i < np.reduceMult(this.low.shape); i++ ) {
         let l = np.loc(this.low, i);
         let h = np.loc(this.high, i);
-        vals.data[i] = Math.random() * (h - l) + l;
+        vals.data[i] = (random.random() as number) * (h - l) + l;
       }
       np.set(sample, bounded, vals);
     }
-    return sample;
+    return np.toNj(sample);
   }
   contains(x: NdArray): boolean {
     // // verify shape

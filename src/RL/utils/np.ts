@@ -8,6 +8,7 @@ import _pack from 'ndarray-pack';
 // eslint-disable-next-line
 //@ts-ignore
 import _unpack from 'ndarray-unpack';
+import nj from 'numjs';
 import { NotImplementedError } from '../Errors';
 
 export const pack: (arr: Array<any>) => NdArray<any> = _pack;
@@ -49,7 +50,7 @@ export const zeros = (shape: number[], dtype: dtype = 'float32') => {
  */
 export const fromTensor = async (tensor: Tensor) => {
   const data = await tensor.data();
-  return ndarray(data, tensor.shape);
+  return nj.array(data, tensor.dtype as ndarray.DataType);
 };
 
 /**
@@ -58,7 +59,7 @@ export const fromTensor = async (tensor: Tensor) => {
  */
 export const fromTensorSync = (tensor: Tensor) => {
   const data = tensor.dataSync();
-  return ndarray(data, tensor.shape);
+  return nj.array(data, tensor.dtype as ndarray.DataType);
 };
 
 export const toTensor = (x: NdArray) => {
@@ -166,7 +167,6 @@ export const set = (src: NdArray, index: number[] | NdArray<any>, val: NdArray<a
     return src;
   }
 };
-
 /** Gets ith value */
 export const loc = (x: NdArray, i: number) => {
   return x.data[x.offset + i];

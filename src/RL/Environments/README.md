@@ -1,5 +1,7 @@
 # Environments
 
+![](./cartpole.gif)
+
 These are the main, **integrated environments** of the `rl-ts` package. To create an environment and step through it and render the environment. These integrated environments are actively maintained.
 
 ```js

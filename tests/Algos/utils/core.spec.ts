@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { discountCumSum } from '../../../src/RL/Algos/utils/core';
-import * as np from '../../../src/RL/utils/np';
+import { discountCumSum } from '../../../lib/es6/RL/Algos/utils/core';
+import * as np from '../../../lib/es6/RL/utils/np';
 describe('Test Algos utils', () => {
   it('discountCumSum should work', () => {
     const x = np.pack([1, 2, 3, 1, 2, 3]);

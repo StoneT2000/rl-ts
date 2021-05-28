@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { DP } from '../../src';
+import { DP } from '../../lib/es6';
 import { SimpleGridWorld } from '../../lib/es6/RL/Environments/examples';
 
 describe('Test Policy Iteration', () => {

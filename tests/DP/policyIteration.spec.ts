@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { DP } from '../../src';
-import { SimpleGridWorld } from '../../src/RL/Environments/examples';
+import { SimpleGridWorld } from '../../lib/es6/RL/Environments/examples';
 
 describe('Test Policy Iteration', () => {
   it('should solve simple grid world', () => {

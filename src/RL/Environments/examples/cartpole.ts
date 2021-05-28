@@ -2,7 +2,6 @@ import { Environment, RenderModes } from '..';
 import { Box, Discrete } from '../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../utils/random';
-import { Scalar } from '@tensorflow/tfjs-core';
 
 export type State = NdArray<number>;
 export type Action = number;

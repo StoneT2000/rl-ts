@@ -7,7 +7,7 @@ import { ReplayBuffer, Transition } from './replayBuffer';
 import { DeepPartial } from '../../utils/types';
 import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
-import { Scalar, Sequential } from '@tensorflow/tfjs';
+import { Scalar } from '@tensorflow/tfjs';
 
 export interface DQNConfigs<State, Action> {
   replayBufferCapacity: number;

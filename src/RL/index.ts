@@ -7,5 +7,5 @@ import { Algos } from './Algos';
  */
 export const RL = {
   DP,
-  Algos
-}
+  Algos,
+};

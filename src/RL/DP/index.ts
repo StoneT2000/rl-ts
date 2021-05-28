@@ -3,5 +3,5 @@ import { PolicyIteration } from './policyIteration';
 
 export const DP = {
   IterativePolicyEvaluation,
-  PolicyIteration
-}
+  PolicyIteration,
+};

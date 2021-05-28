@@ -1,5 +1,5 @@
-import { DQN } from "./dqn"
+import { DQN } from './dqn';
 
 export const Algos = {
-  DQN
-}
+  DQN,
+};

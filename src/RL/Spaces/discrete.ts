@@ -2,7 +2,7 @@ import { Space } from '.';
 import { randomRange } from '../utils/random';
 
 /**
- * discrete space with values from set {0, 1, ..., n - 1}
+ * Primitive discrete space with values from set {0, 1, ..., n - 1}.
  */
 export class Discrete extends Space<number> {
   constructor(public n: number) {

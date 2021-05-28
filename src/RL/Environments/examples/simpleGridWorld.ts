@@ -1,6 +1,6 @@
 import { Environment, RenderModes } from '..';
 import { NotImplementedError } from '../../Errors';
-import { Box2D, Dict, Discrete } from '../../Spaces';
+import { PrimitiveBox2D, Dict, Discrete } from '../../Spaces';
 
 export type State = { grid: number[][]; agentPos: Position };
 export type Action = number;
@@ -37,7 +37,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
   ) {
     super();
     this.observationSpace = new Dict({
-      grid: new Box2D(0, 1, [width, height]),
+      grid: new PrimitiveBox2D(0, 1, [width, height]),
       agentPos: new Dict({
         x: new Discrete(4),
         y: new Discrete(4),

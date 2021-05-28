@@ -11,7 +11,6 @@ export class PolicyIteration<
   Action,
   State
 > extends Agent<State, Action> {
-
   public valueFunction: Map<any, number> = new Map();
 
   public policyStateToActionMap: Map<any, Action> = new Map();
@@ -149,7 +148,7 @@ export class PolicyIteration<
           const obs = env.reset(state);
           const stepOut = env.step(action);
           const reward = stepOut.reward;
-          let p_sp_r_s_a = this.dynamics.bind(env)(stepOut.observation, reward, obs, action);
+          const p_sp_r_s_a = this.dynamics.bind(env)(stepOut.observation, reward, obs, action);
 
           const sp_stateString = this.stateToRep(stepOut.observation);
           const v_sp = this.valueFunction.get(sp_stateString)!;
@@ -172,7 +171,7 @@ export class PolicyIteration<
       }
     }
   }
-  action(observation: State): Action {
+  act(observation: State): Action {
     return this.policy(observation);
   }
 }

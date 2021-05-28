@@ -6,7 +6,7 @@ export abstract class Agent<State, Action> {
    * Selects an action given the new observation
    * @param observation
    */
-  abstract action(observation: State): Action;
+  abstract act(observation: State): Action;
 
   /**
    * Override this function to let user's seed the agent's rng

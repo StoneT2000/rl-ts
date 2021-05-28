@@ -68,7 +68,7 @@ export const fromTensor = async (tensor: Tensor) => {
  */
 export const fromTensorSync = (tensor: Tensor) => {
   const data = tensor.dataSync();
-  return nj.array(data, tensor.dtype as ndarray.DataType);
+  return nj.array(data, tensor.dtype as ndarray.DataType).reshape(...tensor.shape);
 };
 
 /**

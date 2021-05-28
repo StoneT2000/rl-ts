@@ -17,24 +17,28 @@ export interface DQNConfigs<State, Action> {
   targetNet?: tf.LayersModel;
   stateToTensor: (state: State) => tf.Tensor;
   actionToTensor: (action: Action) => tf.Tensor;
+  /** Optional act function to replace the default act */
+  act?: (state: State) => Action;
 }
 export interface DQNTrainConfigs<State, Action> {
   stepCallback(stepData: Transition<State, Action> & {
     time: number,
     episodeDurations: number[],
     episodeRewards: number[],
+    episodeIteration: number,
     info: any,
   }): any;
   epochCallback(epochDate: {
     time: number,
     episodeDurations: number[],
     episodeRewards: number[],
+    episodeIteration: number,
   }): any;
   optimizer: tf.Optimizer;
   gamma: number;
   epsStart: number;
   epsEnd: number;
-  explorationTimeSteps: number;
+  epsDecay: number;
   policyTrainFreq: number;
   targetUpdateFreq: number;
   ckptFreq: number;
@@ -42,6 +46,7 @@ export interface DQNTrainConfigs<State, Action> {
   totalTimeSteps: number;
   verbose: boolean;
   batchSize: number,
+  
 }
 
 export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Space<Action>, State, Action> extends Agent<
@@ -82,21 +87,31 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     this.actionToTensor = this.configs.actionToTensor;
     this.replayBuffer = new ReplayBuffer(this.configs.replayBufferCapacity);
   };
-  act(observation: State): Action {
-    throw new Error('Method not implemented.');
+
+  /**
+   * Select action using the current policy network. By default selects the action by feeding the observation through the network
+   * then return the argmax of the outputs
+   * @param observation - observation to select action off of
+   * @returns action
+   */
+  public act(observation: State): Action {
+    if (this.configs.act) return this.configs.act(observation);
+    let pred = this.policyNet.predict(this.stateToTensor(observation), {}) as tf.Tensor;
+    let action = np.fromTensorSync((pred).argMax(1)).get(0);
+    return action as any;
   }
 
   public async train(trainConfigs: Partial<DQNTrainConfigs<State, Action>>) {
     let configs: DQNTrainConfigs<State, Action> = {
       optimizer: tf.train.adam(1e-3),
-      gamma: 0.99,
+      gamma: 0.999,
       epsStart: 0.9,
-      epsEnd: 0.15,
-      explorationTimeSteps: 100,
-      learningStarts: 100,
+      epsEnd: 0.05,
+      epsDecay: 200,
+      learningStarts: 0,
       policyTrainFreq: 1,
-      targetUpdateFreq: 4,
-      ckptFreq: 1000,
+      targetUpdateFreq: 10,
+      ckptFreq: 100,
       totalTimeSteps: 10000,
       verbose: false,
       batchSize: 32,
@@ -112,14 +127,14 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     let state = this.env.reset();
     let episodeDurations = [0];
     let episodeRewards = [0.0];
+    let episodeIteration = 0;
     for (let t = 0; t < configs.totalTimeSteps; t++) {
-
       // Select and perform an action
-      const eps = this.getEpsilon(t, configs.explorationTimeSteps, configs.epsStart, configs.epsEnd);
+      const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);
       const action = this.actEps(state, eps);
-      //@ts-ignore
       const stepInfo = this.env.step(action);
       
+      // store next state and push to replay buffer
       const nextState = stepInfo.observation;
       const done = stepInfo.done;
       const reward = stepInfo.reward;
@@ -131,7 +146,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       episodeRewards[episodeRewards.length - 1] += reward;
 
       // perform a step of optimization on policy net
-      if (t > configs.learningStarts && t % configs.policyTrainFreq === 0) {
+      if (t >= configs.learningStarts && t % configs.policyTrainFreq === 0) {
         await this.optimizeModel({
           gamma,
           batchSize: configs.batchSize,
@@ -139,48 +154,50 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
         });
       }
 
-      // update target with policy net
-      if (t > configs.learningStarts && t % configs.targetUpdateFreq === 0) {
-        this.targetNet.setWeights(this.policyNet.getWeights());
-      }
-
-      if (t > configs.learningStarts && t % configs.ckptFreq === 0) {
+      if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
         // TODO
       }
       // TODO: allow user to specify async step callbacks
-      await configs.stepCallback({state, nextState, reward, action, time: t, episodeRewards, episodeDurations, info: stepInfo.info, done,});
+      await configs.stepCallback({state, nextState, reward, action, time: t, episodeRewards, episodeDurations, episodeIteration, info: stepInfo.info, done,});
       
       if (done) {
-        // TODO: allow user to specify async epoch callbacks
-        // console.log(`Episode ${episodeRewards.length} - rewards: ${episodeRewards[episodeRewards.length - 1]}, size ${this.replayBuffer.memory.length}`);
-        configs.epochCallback({
+        // update target with policy net
+        if (t >= configs.learningStarts && episodeIteration % configs.targetUpdateFreq === 0) {
+          this.targetNet.setWeights(this.policyNet.getWeights());
+        }
+
+        await configs.epochCallback({
           time: t,
           episodeDurations,
-          episodeRewards
+          episodeRewards,
+          episodeIteration
         });
 
         episodeDurations.push(0);
         episodeRewards.push(0);
+        episodeIteration = episodeIteration + 1;
         state = this.env.reset();
+        
       }
 
     };
   }
-
+  
   private actEps(obs: State, eps: number): Action {
-    // return 0 as $TSFIXME;
-    // return this.env.actionSpace.sample() as $TSFIXME;
     if (random.randomVal() > eps) {
-      return np.fromTensorSync((this.policyNet.predict(this.stateToTensor(obs), {}) as tf.Tensor).argMax()).get(0) as $TSFIXME;
+      if (this.configs.act) return this.configs.act(obs);
+      let pred = this.policyNet.predict(this.stateToTensor(obs)) as tf.Tensor;
+      let action = np.fromTensorSync((pred).argMax(1)).get(0) as any;
+      return action;
     } else {
       return this.env.actionSpace.sample() as $TSFIXME;
     }
   }
 
-  /** vary epsilon by linear schedule */
-  private getEpsilon(timeStep: number, explorationTimeSteps: number, epsStart: number, epsEnd: number) {
-    const fraction = Math.min(timeStep / explorationTimeSteps, 1.0);
-    return epsStart + fraction * (epsEnd - epsStart);
+  /** vary epsilon by exponential schedule */
+  private getEpsilon(timeStep: number, epsDecay: number, epsStart: number, epsEnd: number) {
+    const eps_threshold = epsEnd + (epsStart - epsEnd) * Math.exp(-1. * timeStep / epsDecay);
+    return eps_threshold;
   };
 
   /**
@@ -195,6 +212,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       return;
     }
     const transitions = this.replayBuffer.sample(configs.batchSize);
+    let loss = 0;
     tf.tidy(() => {
       const optimizer = configs.optimizer;
 
@@ -211,23 +229,23 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
         _nextStateBatch.push(this.stateToTensor(transitions[i].nextState));
         _doneBatch.push(transitions[i].done);
       }
+
       let stateBatch = tf.concat(_stateBatch); // [B, D]
       const actionBatch = tf.concat(_actionBatch).asType("int32"); // [B]
       const rewardBatch = tf.concat(_rewardBatch); // [B]
       const nextStateBatch = tf.concat(_nextStateBatch); // [B, D]
-      const doneBatch = tf.concat(_doneBatch);
-    
+
       this.targetNet.trainable = false;
-      // let x = np.toTensor(np.pack([[-0.05, -0.02, 0.01, 0.05], [0.05, 0.02, 0.01, 0.05], [-0.01, -0.04, 0.01, 0.05]]));
       const lossFunc = () => {
 
-        let stateValues = (this.policyNet.apply(stateBatch) as tf.Tensor) // [B, 2]
+        let stateValues = (this.policyNet.apply(stateBatch) as tf.Tensor) // [B, 2]  
         // TODO: remove hardcoded shape here
-        const stateActionValues = stateValues.mul(tf.oneHot(actionBatch, 2)).sum(-1)
-
+        
+        const stateActionValues = stateValues.mul(tf.oneHot(actionBatch, stateValues.shape[1]!)).sum(-1);
+        let nnn = this.targetNet.apply(nextStateBatch) as tf.Tensor;
+        let nextStateValues = (nnn).max(1);
         const doneMask = tf.scalar(1).sub(
-          tf.tensor1d(_doneBatch).asType('float32'));
-        let nextStateValues = (this.targetNet.apply(nextStateBatch) as tf.Tensor).max(1);
+          tf.tensor1d(_doneBatch).asType('float32')); // mask with 1s where there exists a next state and 0s where it is finished and no next state
         let expectedStateActionValues = nextStateValues.mul(doneMask).mul(configs.gamma).add(rewardBatch);
 
         const loss = tf.losses.huberLoss(stateActionValues, expectedStateActionValues) as Scalar;
@@ -235,13 +253,13 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       }
       const grads = tf.variableGrads(lossFunc);
       for (const key of Object.keys(grads.grads)) {
-        grads.grads[key] = grads.grads[key].clipByValue(-10, 10);
+        grads.grads[key] = grads.grads[key].clipByValue(-1, 1);
       }
-      
       optimizer.applyGradients(grads.grads);
       this.targetNet.trainable = true;
+      loss = grads.value.dataSync()[0];
     });
-    return;
+    return loss;
   }
 
 }

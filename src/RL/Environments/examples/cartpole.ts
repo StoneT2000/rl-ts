@@ -10,6 +10,10 @@ export type ActionSpace = Discrete;
 export type ObservationSpace = Box;
 export type Reward = number;
 
+export interface CartPoleConfigs {
+  maxEpisodeSteps: number;
+}
+
 /**
  * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton
  */
@@ -26,13 +30,18 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   public polemass_length = this.masspole * this.length;
   public force_mag = 10.0;
   public tau = 0.02;
-  public kinematics_integrator = 'euler';
   public theta_threshold_radians = (12 * 2 * Math.PI) / 360;
   public x_threshold = 2.4;
   public state: NdArray = random.random([4]);
   public steps_beyond_done: null | number = null;
-  constructor() {
+  public timestep = 0;
+  public maxEpisodeSteps = 500;
+
+  constructor(configs: Partial<CartPoleConfigs> = {}) {
     super();
+    if (configs.maxEpisodeSteps) {
+      this.maxEpisodeSteps = configs.maxEpisodeSteps;
+    }
 
     let caps = nj.array(
       [this.x_threshold * 2, Number.MAX_SAFE_INTEGER, this.theta_threshold_radians * 2, Number.MAX_SAFE_INTEGER],
@@ -44,6 +53,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   reset(): State {
     this.state = random.random([4], -0.05, 0.05);
     this.steps_beyond_done = null;
+    this.timestep = 0;
     return this.state;
   }
   step(action: Action) {
@@ -58,26 +68,21 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     let costheta = Math.cos(theta);
     let sintheta = Math.sin(theta);
 
-    let temp = (force + this.polemass_length * theta_dot ** 2 * sintheta) / this.total_mass;
+    let temp = (force + this.polemass_length * (theta_dot * theta_dot) * sintheta) / this.total_mass;
     let thetaacc =
       (this.gravity * sintheta - costheta * temp) /
-      (this.length * (4.0 / 3.0 - (this.masspole * costheta ** 2) / this.total_mass));
+      (this.length * (4.0 / 3.0 - (this.masspole * (costheta * costheta)) / this.total_mass));
     let xacc = temp - (this.polemass_length * thetaacc * costheta) / this.total_mass;
 
-    if (this.kinematics_integrator === 'euler') {
-      x = x + this.tau * x_dot;
-      x_dot = x_dot + this.tau * xacc;
-      theta = theta + this.tau * theta_dot;
-      theta_dot = theta_dot + this.tau * thetaacc;
-    } else {
-      x_dot = x_dot + this.tau * xacc;
-      x = x + this.tau * x_dot;
-      theta_dot = theta_dot + this.tau * thetaacc;
-      theta = theta + this.tau * theta_dot;
-    }
-    this.state = nj.array([x, x_dot, theta, theta_dot]);
+    x = x + this.tau * x_dot;
+    x_dot = x_dot + this.tau * xacc;
+    theta = theta + this.tau * theta_dot;
+    theta_dot = theta_dot + this.tau * thetaacc;
 
-    const done = x < -this.x_threshold || x > this.x_threshold || theta < -this.theta_threshold_radians || theta > this.theta_threshold_radians;
+    this.state = nj.array([x, x_dot, theta, theta_dot]);
+    this.timestep += 1;
+
+    const done = x < -this.x_threshold || x > this.x_threshold || theta < -this.theta_threshold_radians || theta > this.theta_threshold_radians || this.timestep >= this.maxEpisodeSteps;
 
     if (!done) {
       reward = 1.0;
@@ -105,6 +110,10 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   }
 
   render(mode: RenderModes): void {
-    throw new Error('Method not implemented.');
+    if (mode === "human") {
+      // open up web page displaying state and update the page with socket
+    } else {
+      throw new Error('Method not implemented.');
+    }
   }
 }

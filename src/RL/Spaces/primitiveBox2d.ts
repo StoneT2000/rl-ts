@@ -6,7 +6,7 @@ import { randomRange } from '../utils/random';
  */
 export class PrimitiveBox2D extends Space<number[][]> {
   constructor(public low: number, public high: number, public shape: Shape) {
-    super({discrete: false});
+    super({ discrete: false });
     if (shape.length !== 2) {
       throw new Error('Shape must be 2D');
     }

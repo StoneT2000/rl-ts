@@ -48,9 +48,39 @@ export const reduceMult = (arr: number[] | ndarray.NdArray): number => {
   }
   return ret;
 };
-
 export const zeros = (shape: number[], dtype: dtype = 'float32') => {
   return ndarray(new types[dtype](reduceMult(shape)), shape);
+};
+
+export const tensorLikeToNdArray = (x: TensorLike): NdArray => {
+  if (x instanceof Tensor) {
+    x = fromTensorSync(x);
+  } else if (x instanceof Array) {
+    x = pack(x);
+  } else if (typeof x === 'number') {
+    x = nj.array([x]);
+  }
+  return x;
+};
+export const tensorLikeToTensor = (x: TensorLike): Tensor => {
+  if (x instanceof Tensor) {
+    return x;
+  } else if (x instanceof Array) {
+    x = pack(x);
+  } else if (typeof x === 'number') {
+    x = nj.array([x]);
+  }
+  return tensor(x.selection.data).reshape(x.shape);
+};
+export const NdArrayToTensorLike = (x: NdArray, target: TensorLike): TensorLike => {
+  if (target instanceof Tensor) {
+    return tensor(x.selection.data).reshape(x.shape);
+  } else if (target instanceof Array) {
+    return unpack(x);
+  } else if (typeof target === 'number') {
+    return x.get(0);
+  }
+  return x;
 };
 
 /**

@@ -13,7 +13,7 @@ export abstract class Space<T> {
   constructor(
     /** Meta data about the space such as if it is a discrete space or not */
     public meta: SpaceMeta
-  ) {};
+  ) {}
   public rng: prng = seedrandom();
   abstract sample(): T;
   abstract contains(x: T): boolean;

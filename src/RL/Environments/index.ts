@@ -25,13 +25,13 @@ export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any,
  * @class Environment
  *
  * A class for defining an environment.
- * 
+ *
  * Requires ObservationSpace, ActionSpace definitions, which are spaces for Observation and Action.
- * 
+ *
  * State type is a internal representation for convenience and passed to rendering functions
- * 
+ *
  * Observation type should be something can be generally derived from State and is what interacting agents receive
- * 
+ *
  */
 export abstract class Environment<
   ObservationSpace extends Space<Observation>,
@@ -66,7 +66,7 @@ export abstract class Environment<
    *  done: boolean,
    *  info: any
    * }
-   * 
+   *
    * Note that the observation is not necessarily required to be of the same type as state.
    */
   abstract step(action: Action): { observation: Observation; reward: Reward; done: boolean; info?: any };
@@ -94,13 +94,13 @@ export abstract class Environment<
   public async updateViewer(state: State, info: any = {}) {
     await this.viewer.step(state, info);
   }
-  protected async sleep (ms: number): Promise<void> {
+  protected async sleep(ms: number): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve();
       }, ms);
     });
-  };
+  }
 
   /**
    * The dynamics of the environment. Throws an error when called if a environment does not implement this

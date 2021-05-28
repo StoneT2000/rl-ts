@@ -13,7 +13,9 @@ export interface DQNConfigs<Observation, Action> {
   replayBufferCapacity: number;
   policyNet?: tf.LayersModel;
   targetNet?: tf.LayersModel;
+  /** Converts observations to tensors that can be used in optimization function */
   obsToTensor: (state: Observation) => tf.Tensor;
+  /** Converts actions to tensors that can be used in optimization function */
   actionToTensor: (action: Action) => tf.Tensor;
   /** Optional act function to replace the default act */
   act?: (obs: Observation) => Action;
@@ -48,17 +50,23 @@ export interface DQNTrainConfigs<Observation, Action> {
   batchSize: number;
 }
 
-export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>, Observation, Action> extends Agent<
+export class DQN<
+  ObservationSpace extends Space<Observation>,
+  ActionSpace extends Space<Action>,
   Observation,
   Action
-> {
+> extends Agent<Observation, Action> {
   public configs: DQNConfigs<Observation, Action> = {
     replayBufferCapacity: 1000,
-    obsToTensor: () => {
-      throw new Error('obsToTensor function not provided');
+    obsToTensor: (obs: Observation) => {
+      // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
+      let tensor = np.tensorLikeToTensor(obs);
+      return tensor.reshape([1, ...tensor.shape]);
     },
-    actionToTensor: () => {
-      throw new Error('actionToTensor function not provided');
+    actionToTensor: (action: Action) => {
+      // eslint-disable-next-line
+      // @ts-ignore - let this throw an error, which can happen if action space is dict. if action space is dict, user needs to override this.
+      return np.tensorLikeToTensor(action);
     },
   };
   public replayBuffer: ReplayBuffer<Observation, Action>;
@@ -84,7 +92,7 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
     if (!this.configs.policyNet || !this.configs.targetNet) {
       throw new Error('Policy net or target net not provided');
     }
-    if (!this.env.actionSpace.meta.discrete) throw new Error("Action space is not discrete");
+    if (!this.env.actionSpace.meta.discrete) throw new Error('Action space is not discrete');
     this.policyNet = this.configs.policyNet;
     this.targetNet = this.configs.targetNet;
     this.obsToTensor = this.configs.obsToTensor;
@@ -101,7 +109,7 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
   public act(observation: Observation): Action {
     if (this.configs.act) return this.configs.act(observation);
     const pred = this.policyNet.predict(this.obsToTensor(observation), {}) as tf.Tensor;
-    const action = np.fromTensorSync(pred.argMax(1)).get(0);
+    const action = np.tensorLikeToNdArray(pred.argMax(1)).get(0);
     return action as any;
   }
 
@@ -137,7 +145,7 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
       // Select and perform an action
       const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);
       const action = this.actEps(state, eps);
-      
+
       const stepInfo = this.env.step(action);
 
       // store next state and push to replay buffer
@@ -202,10 +210,10 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
     if (random.randomVal() > eps) {
       if (this.configs.act) return this.configs.act(obs);
       const pred = this.policyNet.predict(this.obsToTensor(obs)) as tf.Tensor;
-      const action = np.fromTensorSync(pred.argMax(1)).get(0) as any;
+      const action = np.fromTensorSync(pred.argMax(1)).get(0) as $TSFIXME;
       return action;
     } else {
-      return this.env.actionSpace.sample() as $TSFIXME;
+      return this.env.actionSpace.sample();
     }
   }
 
@@ -249,10 +257,9 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
 
       this.targetNet.trainable = false;
       const lossFunc = () => {
-        
         const stateValues = this.policyNet.apply(stateBatch) as tf.Tensor; // [B, 2]
         // TODO: remove hardcoded shape here
-        
+
         const stateActionValues = stateValues.mul(tf.oneHot(actionBatch, stateValues.shape[1]!)).sum(-1);
         const nnn = this.targetNet.apply(nextStateBatch) as tf.Tensor;
         const nextStateValues = nnn.max(1);

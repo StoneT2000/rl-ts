@@ -3,6 +3,7 @@ import path from 'path';
 import { Box, Discrete } from '../../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../../utils/random';
+import { tensorLikeToNdArray } from '../../../utils/np';
 
 /** Vector with shape (2, ) */
 export type State = NdArray<number>;
@@ -26,11 +27,11 @@ export interface PendulumConfigs {
 export class Pendulum extends Environment<ObservationSpace, any, Observation, State, any, Reward> {
   public observationSpace: ObservationSpace;
   public max_speed = 8;
-  public max_torque = 2.;
-  public dt = .05;
+  public max_torque = 2;
+  public dt = 0.05;
   public g = 9.81;
-  public m = 1.;
-  public l = 1.;
+  public m = 1;
+  public l = 1;
   public actionSpace: Box | Discrete;
   public state: NdArray = random.random([2]);
 
@@ -48,10 +49,7 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
       this.dt = configs.dt;
     }
 
-    const caps = nj.array(
-      [1., 1., this.max_speed],
-      'float32'
-    );
+    const caps = nj.array([1, 1, this.max_speed], 'float32');
     this.observationSpace = new Box(caps.multiply(-1), caps, caps.shape, 'float32');
     if (configs.discretizeActionSpace) {
       this.actionSpace = new Discrete(2);
@@ -59,37 +57,36 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
       this.actionSpace = new Box(-this.max_torque, this.max_torque, [1], 'float32');
     }
   }
-  reset(): State {
-    const high = nj.array([Math.PI, 1.]);
+  reset(): Observation {
+    const high = nj.array([Math.PI, 1]);
     this.state = random.random([2], 0, 1).multiply(high.multiply(2)).subtract(high);
     this.timestep = 0;
     return this.getObs();
   }
-  step(action: NdArray | number) {
+  step(action: TensorLike) {
     const th = this.state.get(0);
     const thdot = this.state.get(1);
 
-    const g = this.g
-    const m = this.m
-    const l = this.l
-    const dt = this.dt
-    let u = nj.zeros([1]);
+    const g = this.g;
+    const m = this.m;
+    const l = this.l;
+    const dt = this.dt;
+    let u = tensorLikeToNdArray(action);
     if (this.actionSpace.meta.discrete) {
-      if (action === 1) {
+      if (u.get(0) === 1) {
         u = nj.array([this.max_torque]);
       } else {
         u = nj.array([-this.max_torque]);
       }
     } else {
-      u = nj.clip(action, -this.max_torque, this.max_torque);
+      u = nj.clip(u, -this.max_torque, this.max_torque);
     }
-    
-     
-    this.last_u = u.get(0) // for rendering
-    const costs = this.angleNormalize(th) ** 2 + .1 * thdot ** 2 + .001 * (u.get(0) ** 2)
 
-    let newthdot = thdot + (-3 * g / (2 * l) * Math.sin(th + Math.PI) + 3. / (m * l ** 2) * u.get(0)) * dt
-    const newth = th + newthdot * dt
+    this.last_u = u.get(0); // for rendering
+    const costs = this.angleNormalize(th) ** 2 + 0.1 * thdot ** 2 + 0.001 * u.get(0) ** 2;
+
+    let newthdot = thdot + (((-3 * g) / (2 * l)) * Math.sin(th + Math.PI) + (3 / (m * l ** 2)) * u.get(0)) * dt;
+    const newth = th + newthdot * dt;
     newthdot = nj.clip(newthdot, -this.max_speed, this.max_speed).get(0);
 
     this.state = nj.array([newth, newthdot]);
@@ -98,16 +95,16 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
       observation: this.getObs(),
       reward: -costs,
       done: this.timestep >= this.maxEpisodeSteps,
-      info: {}
+      info: {},
     };
   }
   private getObs() {
-    const th = this.state.get(0)
+    const th = this.state.get(0);
     const thdot = this.state.get(1);
     return nj.array([Math.cos(th), Math.sin(th), thdot]);
   }
   private angleNormalize(th: number) {
-    return (((th+Math.PI) % (2*Math.PI)) - Math.PI);
+    return ((th + Math.PI) % (2 * Math.PI)) - Math.PI;
   }
 
   async render(

@@ -25,8 +25,6 @@ export class Viewer<State> {
       const server = new http.Server(app);
       this.io = new Server(server);
       const port = process.env.PORT || 3000;
-      
-      
 
       app.use(express.static(distPath));
 
@@ -45,7 +43,7 @@ export class Viewer<State> {
       server
         .listen(port, () => {
           console.log(`Viewer running at http://localhost:${port}/${urlPath}`);
-          
+
           open(`http://localhost:${port}/${urlPath}`);
         })
         .on('error', (err) => {
@@ -56,17 +54,19 @@ export class Viewer<State> {
   /** step forward in the viewer by emitting data provided a client is connected */
   async step(state: State, info: any) {
     if (!this.io) {
-      throw new Error("Socket not initialized");
+      throw new Error('Socket not initialized');
     }
     if (this.connectPromise) {
-      console.log("Viewer paused, waiting for web viewer to be opened again");
+      console.log('Viewer paused, waiting for web viewer to be opened again');
       await this.connectPromise;
-      console.log("Viewer resumed");
+      console.log('Viewer resumed');
     }
     this.io.emit('data', state, info);
   }
 
   private setupConnectPromise() {
-    this.connectPromise = new Promise((res) => {this.resolveConnectPromise = res});
+    this.connectPromise = new Promise((res) => {
+      this.resolveConnectPromise = res;
+    });
   }
 }

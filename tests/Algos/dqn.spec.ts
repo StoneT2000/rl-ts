@@ -27,13 +27,6 @@ describe('Test DQN', () => {
       replayBufferCapacity: 10000,
       policyNet,
       targetNet,
-      obsToTensor: (obs: ExtractObservationType<CartPole>) => {
-        return np.toTensor(obs).reshape([1, 4]);
-      },
-      actionToTensor: (action: ExtractActionType<CartPole>) => {
-        action;
-        return tf.tensor(action);
-      },
     });
 
     const evaluationRewards = [];

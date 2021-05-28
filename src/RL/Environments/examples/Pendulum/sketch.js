@@ -32,7 +32,7 @@ function update(data, info) {
   line(...linePos);
 
   // axle
-  noStroke()
+  noStroke();
   fill(51, 56, 68);
   circle(axlePos[0], axlePos[1], width / 2);
 

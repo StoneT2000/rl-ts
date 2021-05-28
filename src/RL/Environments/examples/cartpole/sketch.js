@@ -37,7 +37,7 @@ function update(data, info) {
 
   // cart
   noStroke();
-  fill(0);
+  fill(51, 56, 68);
   rect(axlePos[0] - cartwidth / 2, axlePos[1] - cartheight / 4, cartwidth, cartheight);
 
   // axle
@@ -53,7 +53,7 @@ function update(data, info) {
   strokeWeight(polewidth);
   line(...linePos);
 
-  fill(51, 56, 64);
+  fill(51, 56, 68);
   noStroke();
   textSize(18);
   if (rewards !== undefined) {

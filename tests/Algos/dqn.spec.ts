@@ -1,8 +1,6 @@
 import { DQN } from '../../src/RL/Algos/dqn/index';
 import { CartPole } from '../../src/RL/Environments/examples/Cartpole';
 import * as tf from '@tensorflow/tfjs';
-import { ExtractActionType, ExtractObservationType } from '../../src/RL/Environments';
-import * as np from '../../src/RL/utils/np';
 import * as random from '../../src/RL/utils/random';
 import { expect } from 'chai';
 describe('Test DQN', () => {

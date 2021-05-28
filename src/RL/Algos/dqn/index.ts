@@ -59,6 +59,7 @@ export class DQN<
   public configs: DQNConfigs<Observation, Action> = {
     replayBufferCapacity: 1000,
     obsToTensor: (obs: Observation) => {
+      // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
       const tensor = np.tensorLikeToTensor(obs);
       return tensor.reshape([1, ...tensor.shape]);

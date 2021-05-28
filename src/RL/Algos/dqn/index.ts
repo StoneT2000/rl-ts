@@ -60,7 +60,7 @@ export class DQN<
     replayBufferCapacity: 1000,
     obsToTensor: (obs: Observation) => {
       // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
-      let tensor = np.tensorLikeToTensor(obs);
+      const tensor = np.tensorLikeToTensor(obs);
       return tensor.reshape([1, ...tensor.shape]);
     },
     actionToTensor: (action: Action) => {

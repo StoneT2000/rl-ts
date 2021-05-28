@@ -3,28 +3,28 @@ import * as random from '../../utils/random';
 /**
  * Defines a transition object, storing state, action, next state, and reward
  */
-export interface Transition<State, Action> {
-  state: State;
+export interface Transition<Observation, Action> {
+  state: Observation;
   action: Action;
   reward: number;
-  nextState: State;
+  nextState: Observation;
   done: boolean;
 }
 
-export class ReplayBuffer<State, Action> {
-  public memory: Denque<Transition<State, Action>>;
+export class ReplayBuffer<Observation, Action> {
+  public memory: Denque<Transition<Observation, Action>>;
   constructor(
     /** Capacity of the replay memory */
     public capacity: number
   ) {
     this.memory = new Denque([], { capacity });
   }
-  public push(transition: Transition<State, Action>): void {
+  public push(transition: Transition<Observation, Action>): void {
     this.memory.push(transition);
   }
-  public sample(batchSize: number): Array<Transition<State, Action>> {
+  public sample(batchSize: number): Array<Transition<Observation, Action>> {
     // TODO: use resovoir sampling for picking unique k
-    const sample: Array<Transition<State, Action>> = [];
+    const sample: Array<Transition<Observation, Action>> = [];
     for (let i = 0; i < batchSize; i++) {
       // this.memory.length
       const k = Math.floor(this.memory.length * random.randomVal());

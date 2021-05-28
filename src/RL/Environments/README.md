@@ -45,7 +45,7 @@ To make a web based viewer (the `'human'` render mode), the following is necessa
 2. Update the viewer
 3. Create the html and js for rendering
 
-First is the following initialization snippet that goes into the `env.render` function:
+First is the following initialization snippet that goes into the `env.render(mode, configs)` function:
 
 ```js
 if (mode === 'web') {
@@ -59,7 +59,7 @@ After initialization, we update the viewer as follows
 
 ```js
 const delay = 1 / (configs.fps / 1000);
-await sleep(delay);
+await this.sleep(delay);
 await this.updateViewer(state, info);
 ```
 

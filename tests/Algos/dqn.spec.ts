@@ -1,7 +1,7 @@
 import { DQN } from '../../src/RL/Algos/dqn/index';
 import { CartPole } from '../../src/RL/Environments/examples/cartpole';
 import * as tf from '@tensorflow/tfjs';
-import { ExtractActionType, ExtractStateType } from '../../src/RL/Environments';
+import { ExtractActionType, ExtractObservationType, ExtractStateType } from '../../src/RL/Environments';
 import * as np from '../../src/RL/utils/np';
 import * as random from '../../src/RL/utils/random';
 import { expect } from 'chai';
@@ -27,8 +27,8 @@ describe('Test DQN', () => {
       replayBufferCapacity: 10000,
       policyNet,
       targetNet,
-      stateToTensor: (state: ExtractStateType<CartPole>) => {
-        return np.toTensor(state).reshape([1, 4]);
+      obsToTensor: (obs: ExtractObservationType<CartPole>) => {
+        return np.toTensor(obs).reshape([1, 4]);
       },
       actionToTensor: (action: ExtractActionType<CartPole>) => {
         action;

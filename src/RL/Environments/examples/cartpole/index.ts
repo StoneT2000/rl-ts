@@ -3,9 +3,9 @@ import path from 'path';
 import { Box, Discrete } from '../../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../../utils/random';
-import { sleep } from '../../../utils/sleep';
 
 export type State = NdArray<number>;
+export type Observation = NdArray<number>;
 export type Action = number;
 export type ActionSpace = Discrete;
 export type ObservationSpace = Box;
@@ -16,9 +16,9 @@ export interface CartPoleConfigs {
 }
 
 /**
- * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton
+ * CartPole environment
  */
-export class CartPole extends Environment<ObservationSpace, ActionSpace, State, Action, Reward> {
+export class CartPole extends Environment<ObservationSpace, ActionSpace, Observation, State, Action, Reward> {
   public observationSpace: ObservationSpace;
   /** 0, 1, 2, 3 represent North, East, South, West directions */
   public actionSpace = new Discrete(4);
@@ -126,7 +126,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     if (mode === 'web') {
       if (!this.viewer.isInitialized()) await this.viewer.initialize(path.join(__dirname, '../'), 'cartpole/');
       const delayMs = 1 / (configs.fps / 1000);
-      await sleep(delayMs);
+      await this.sleep(delayMs);
       await this.updateViewer(this.state, {
         timestep: this.timestep,
         globalTimestep: this.globalTimestep,

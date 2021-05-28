@@ -19,7 +19,6 @@ describe('Test box space', () => {
     it('should sample correctly with scalar low and high', () => {
       const space = new Spaces.Box(0, 1, [2, 2], 'float32');
       const sample = space.sample();
-      console.log(sample.selection);
       for (let i = 0; i < sample.size; i++) {
         expect(sample.selection.data[i]).to.be.lt(1);
         expect(sample.selection.data[i]).to.be.gt(0);

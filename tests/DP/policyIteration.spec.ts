@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { DP } from '../../src';
-import { ExtractStateType } from '../../src/RL/Environments';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Policy Iteration', () => {

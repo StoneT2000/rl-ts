@@ -8,7 +8,7 @@ import _pack from 'ndarray-pack';
 // eslint-disable-next-line
 //@ts-ignore
 import _unpack from 'ndarray-unpack';
-import nj, {NdArray} from 'numjs';
+import nj, { NdArray } from 'numjs';
 import { NotImplementedError } from '../Errors';
 
 export const pack = (arr: Array<any>, dtype?: DataType): NdArray<any> => {
@@ -19,10 +19,10 @@ export const packNp = (arr: Array<any>): ndarray.NdArray<any> => {
 };
 export const unpack = (arr: NdArray<any>): Array<any> => {
   return arr.tolist();
-}
+};
 export const unpackNp = (arr: ndarray.NdArray<any>): Array<any> => {
   return _unpack(arr);
-}
+};
 
 export const types = {
   float32: Float32Array,
@@ -75,9 +75,9 @@ export const fromTensorSync = (tensor: Tensor) => {
  * Converts tensor to NdArray synchronously
  * @param tensor
  */
- export const fromTensorSyncToNp = (tensor: Tensor): ndarray.NdArray => {
+export const fromTensorSyncToNp = (tensor: Tensor): ndarray.NdArray => {
   const data = tensor.dataSync();
-  return ndarray(data, tensor.shape)
+  return ndarray(data, tensor.shape);
 };
 
 export const toTensor = (x: NdArray) => {
@@ -112,14 +112,16 @@ export const push = (arr: NdArray<any>, val: number | NdArray): NdArray => {
   }
 };
 
-
-
 /**
  * A better set function that allows setting other NdArrays in others in place or using a boolean mask
  *
  * @param arr
  */
-export const set = (src: ndarray.NdArray, index: number[] | ndarray.NdArray<any>, val: ndarray.NdArray<any> | number): ndarray.NdArray => {
+export const set = (
+  src: ndarray.NdArray,
+  index: number[] | ndarray.NdArray<any>,
+  val: ndarray.NdArray<any> | number
+): ndarray.NdArray => {
   // if index argument is a NdArray, expect it to be a boolean mask.
   if (index instanceof Array) {
     // verify shapes are valid
@@ -167,22 +169,24 @@ export const set = (src: ndarray.NdArray, index: number[] | ndarray.NdArray<any>
       throw new Error(`Boolean mask shape ${index.shape} mismatched with ${src.shape}`);
     }
 
-    let positiveIndices: number[] = [];
+    const positiveIndices: number[] = [];
     for (let i = 0; i < reduceMult(index.shape); i++) {
-      let v = loc(index, i);
+      const v = loc(index, i);
       if (v === 1) {
         positiveIndices.push(i);
       }
     }
 
-    if (typeof val === "number") {
+    if (typeof val === 'number') {
       for (let i = 0; i < positiveIndices.length; i++) {
         src.data[positiveIndices[i]] = val;
       }
     } else {
       if (positiveIndices.length === 0) return src;
       if (reduceMult(val.shape) !== positiveIndices.length) {
-        throw new Error(`Cannot assign ${val.shape} input values to ${positiveIndices.length} output values when masking`);
+        throw new Error(
+          `Cannot assign ${val.shape} input values to ${positiveIndices.length} output values when masking`
+        );
       }
       for (let i = 0; i < positiveIndices.length; i++) {
         src.data[positiveIndices[i]] = loc(val, i);
@@ -194,11 +198,11 @@ export const set = (src: ndarray.NdArray, index: number[] | ndarray.NdArray<any>
 /** Gets ith value */
 export const loc = (x: ndarray.NdArray, i: number) => {
   return x.data[x.offset + i];
-}
+};
 
 export const fromNj = (x: NdArray): ndarray.NdArray => {
   return _pack(x.tolist());
-}
+};
 export const toNj = (x: ndarray.NdArray) => {
   return nj.array(_unpack(x), x.dtype);
-}
+};

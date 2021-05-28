@@ -1,4 +1,4 @@
-import ndarray from "ndarray";
+import ndarray from 'ndarray';
 
 /**
  * Makes every field in object T a partial type (optional)
@@ -10,7 +10,7 @@ declare global {
   /** A type that is any to avoid compilation errors for now but should be fixed in the future */
   type $TSFIXME = any;
 }
-declare module "numjs" {
+declare module 'numjs' {
   interface NdArray<T> {
     selection: ndarray.NdArray;
     reshape(...shapes: number[]): NdArray<T>;

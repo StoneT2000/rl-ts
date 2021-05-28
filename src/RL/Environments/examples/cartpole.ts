@@ -43,7 +43,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
       this.maxEpisodeSteps = configs.maxEpisodeSteps;
     }
 
-    let caps = nj.array(
+    const caps = nj.array(
       [this.x_threshold * 2, Number.MAX_SAFE_INTEGER, this.theta_threshold_radians * 2, Number.MAX_SAFE_INTEGER],
       'float32'
     );
@@ -58,21 +58,21 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   }
   step(action: Action) {
     let reward = 1;
-    let info = {};
+    const info = {};
     let x = this.state.get(0);
     let x_dot = this.state.get(1);
     let theta = this.state.get(2);
     let theta_dot = this.state.get(3);
 
-    let force = action === 1 ? this.force_mag : -this.force_mag;
-    let costheta = Math.cos(theta);
-    let sintheta = Math.sin(theta);
+    const force = action === 1 ? this.force_mag : -this.force_mag;
+    const costheta = Math.cos(theta);
+    const sintheta = Math.sin(theta);
 
-    let temp = (force + this.polemass_length * (theta_dot * theta_dot) * sintheta) / this.total_mass;
-    let thetaacc =
+    const temp = (force + this.polemass_length * (theta_dot * theta_dot) * sintheta) / this.total_mass;
+    const thetaacc =
       (this.gravity * sintheta - costheta * temp) /
       (this.length * (4.0 / 3.0 - (this.masspole * (costheta * costheta)) / this.total_mass));
-    let xacc = temp - (this.polemass_length * thetaacc * costheta) / this.total_mass;
+    const xacc = temp - (this.polemass_length * thetaacc * costheta) / this.total_mass;
 
     x = x + this.tau * x_dot;
     x_dot = x_dot + this.tau * xacc;
@@ -82,7 +82,12 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     this.state = nj.array([x, x_dot, theta, theta_dot]);
     this.timestep += 1;
 
-    const done = x < -this.x_threshold || x > this.x_threshold || theta < -this.theta_threshold_radians || theta > this.theta_threshold_radians || this.timestep >= this.maxEpisodeSteps;
+    const done =
+      x < -this.x_threshold ||
+      x > this.x_threshold ||
+      theta < -this.theta_threshold_radians ||
+      theta > this.theta_threshold_radians ||
+      this.timestep >= this.maxEpisodeSteps;
 
     if (!done) {
       reward = 1.0;
@@ -92,7 +97,9 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
       reward = 1.0;
     } else {
       if (this.steps_beyond_done === 0) {
-        console.error("You are calling 'step()' even though this environment already returned done = true. You should always call reset() once you receive 'done = true' -- any further steps are undefined behavior")
+        console.error(
+          "You are calling 'step()' even though this environment already returned done = true. You should always call reset() once you receive 'done = true' -- any further steps are undefined behavior"
+        );
       }
       this.steps_beyond_done += 1;
       reward = 0.0;
@@ -110,7 +117,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   }
 
   render(mode: RenderModes): void {
-    if (mode === "human") {
+    if (mode === 'human') {
       // open up web page displaying state and update the page with socket
     } else {
       throw new Error('Method not implemented.');

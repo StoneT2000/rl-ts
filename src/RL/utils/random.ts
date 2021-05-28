@@ -11,7 +11,11 @@ export interface prng {
   state(): seedrandom.State;
 }
 
-export const randomRange = (rng: prng, low: number = Number.MIN_SAFE_INTEGER, high: number = Number.MAX_SAFE_INTEGER): number => {
+export const randomRange = (
+  rng: prng,
+  low: number = Number.MIN_SAFE_INTEGER,
+  high: number = Number.MAX_SAFE_INTEGER
+): number => {
   return rng.double() * (high - low) + low;
 };
 
@@ -21,14 +25,14 @@ export const randomVal = () => {
 };
 
 /** return array of given shape with values from [low, high] */
-export const random = (shape: number[], low: number = 0, high: number = 1) => {
-  let vals = nj.zeros(shape);
+export const random = (shape: number[], low = 0, high = 1) => {
+  const vals = nj.zeros(shape);
   for (let i = 0; i < vals.size; i++) {
     vals.selection.data[vals.selection.offset + i] = rng() * (high - low) + low;
-  };
+  }
   return vals;
 };
 
 export const seed = (seed: number) => {
   rng = seedrandom(`${seed}`);
-}
+};

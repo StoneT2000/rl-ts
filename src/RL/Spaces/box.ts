@@ -4,7 +4,6 @@ import * as random from '../utils/random';
 import * as np from '../utils/np';
 import ops from 'ndarray-ops';
 import * as tf from '@tensorflow/tfjs-node';
-import { NotImplementedError } from '../Errors';
 import nj from 'numjs';
 
 export class Box extends Space<nj.NdArray<number>> {

@@ -1,4 +1,4 @@
-import { NdArray } from 'ndarray';
+import nj, { NdArray } from 'numjs';
 import * as np from '../../utils/np';
 
 /**
@@ -8,7 +8,7 @@ import * as np from '../../utils/np';
  */
 export const discountCumSum = (x: NdArray, discount: number): NdArray => {
   const n = x.shape[0];
-  const cumsum = np.zeros(x.shape);
+  const cumsum = nj.zeros(x.shape);
   cumsum.set(n - 1, x.get(n - 1));
   for (let i = 1; i < n; i++) {
     const prev = cumsum.get(n - i);

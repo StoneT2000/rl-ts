@@ -1,12 +1,11 @@
 import { DP } from './DP';
-import { Graph } from './Graph';
-
+import { Algos } from './Algos';
 /**
  * @class RL
  *
  * The overarching class that serves as the entry point to this RL library
  */
-export class RL {
-  public static Graph = Graph;
-  public static DP = DP;
+export const RL = {
+  DP,
+  Algos
 }

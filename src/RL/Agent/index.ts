@@ -1,5 +1,5 @@
 /**
- * Defines a generic mdp agent
+ * Defines a generic agent
  */
 export abstract class Agent<State, Action> {
   /**

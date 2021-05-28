@@ -1,9 +1,9 @@
-import { DQN } from '../../lib/es6/RL/Algos/dqn/index';
-import { CartPole } from '../../lib/es6/RL/Environments/examples/cartpole';
+import { DQN } from '../../src/RL/Algos/dqn/index';
+import { CartPole } from '../../src/RL/Environments/examples/cartpole';
 import * as tf from '@tensorflow/tfjs';
-import { ExtractActionType, ExtractStateType } from '../../lib/es6/RL/Environments';
-import * as np from '../../lib/es6/RL/utils/np';
-import * as random from '../../lib/es6/RL/utils/random';
+import { ExtractActionType, ExtractStateType } from '../../src/RL/Environments';
+import * as np from '../../src/RL/utils/np';
+import * as random from '../../src/RL/utils/random';
 import { expect } from 'chai';
 describe('Test DQN', () => {
   it('should run', async () => {
@@ -37,7 +37,7 @@ describe('Test DQN', () => {
     });
 
     const evaluationRewards = [];
-    const evaluateModel = (data: { time: number; episodeRewards: number[] }) => {
+    const evaluateModel = () => {
       let state = dqn.env.reset();
       let reward = 0;
       while (true) {

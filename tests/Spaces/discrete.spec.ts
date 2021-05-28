@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Spaces } from '../../lib/es6';
+import { Spaces } from '../../src';
 
 describe('Test discrete space', () => {
   describe('Test Discrete', () => {

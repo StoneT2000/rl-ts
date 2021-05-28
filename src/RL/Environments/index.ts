@@ -1,6 +1,7 @@
 import { NotImplementedError } from '../Errors';
 import { Space } from '../Spaces';
-export type RenderModes = 'human' | 'ansi' | 'rgb_array';
+import { Viewer } from './viewer';
+export type RenderModes = 'web' | 'ansi';
 
 export type Dynamics<State, Action, Reward> = (
   sucessorState: State,
@@ -35,7 +36,11 @@ export abstract class Environment<
    * Construct a new environment. NOTE: it is recommended to define any state related code in the reset()
    * function to keep the environment episodic. Even if the environment has infinite horizon,
    * this is still recommended */
-  constructor() {
+  protected viewer: Viewer<State> = new Viewer();
+  constructor(
+    /** the name of the environment */
+    public name: string
+  ) {
     // TODO: check if this is okay to do as a cleanup method
     // process.on("exit", () => {
     //   this.close();
@@ -68,7 +73,16 @@ export abstract class Environment<
    * Renders the environment
    * @param mode - The render mode to use. "human" is human readable output rendered to stdout. "ansi" returns a string containing terminal-style text representation. "rgb_array" returns an array representing rgb values per pixel in a image
    */
-  abstract render(mode: RenderModes): void;
+  abstract render(mode: RenderModes, configs?: any): Promise<void> | void;
+
+  /**
+   * Send state and any other information to the viewer
+   * @param state
+   * @param info
+   */
+  public async updateViewer(state: State, info: any = {}) {
+    await this.viewer.step(state, info);
+  }
 
   /**
    * The dynamics of the environment. Throws an error when called if a environment does not implement this

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { PrimitiveBox2D, Dict, Discrete } from '../../lib/es6/RL/Spaces';
+import { PrimitiveBox2D, Dict, Discrete } from '../../src/RL/Spaces';
 
 describe('Test dict space', () => {
   it('should sample correctly from one nesting', () => {

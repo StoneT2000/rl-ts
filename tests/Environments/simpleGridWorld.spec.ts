@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Environments } from '../../lib/es6/';
+import { Environments } from '../../src';
 
 describe('Test Simple Grid World', () => {
   it('should run a episode properly', () => {

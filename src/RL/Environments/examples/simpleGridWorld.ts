@@ -35,7 +35,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
     public targetPositions: Position[],
     public startPosition: Position
   ) {
-    super();
+    super('SimpleGridWorld');
     this.observationSpace = new Dict({
       grid: new PrimitiveBox2D(0, 1, [width, height]),
       agentPos: new Dict({
@@ -105,7 +105,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
   }
   render(mode: RenderModes): void {
     const obs = this.getObs();
-    if (mode === 'human') {
+    if (mode === 'ansi') {
       for (let y = 0; y < this.height; y++) {
         console.log(obs.grid[y]);
       }

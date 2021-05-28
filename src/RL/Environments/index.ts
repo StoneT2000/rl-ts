@@ -1,7 +1,7 @@
 import { NotImplementedError } from '../Errors';
 import { Space } from '../Spaces';
 import { Viewer } from './viewer';
-export type RenderModes = 'human' | 'ansi' | 'rgb_array';
+export type RenderModes = 'web' | 'ansi';
 
 export type Dynamics<State, Action, Reward> = (
   sucessorState: State,

@@ -105,7 +105,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
   }
   render(mode: RenderModes): void {
     const obs = this.getObs();
-    if (mode === 'human') {
+    if (mode === 'ansi') {
       for (let y = 0; y < this.height; y++) {
         console.log(obs.grid[y]);
       }

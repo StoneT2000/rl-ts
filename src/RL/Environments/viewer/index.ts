@@ -28,7 +28,7 @@ export class Viewer<State> {
       });
       server
         .listen(port, () => {
-          console.log(`Viewer running at http://localhost:${port}/`);
+          console.log(`Viewer running at http://localhost:${port}/${urlPath}`);
           open(`http://localhost:${port}/${urlPath}`);
           resolve();
         })
@@ -37,7 +37,7 @@ export class Viewer<State> {
         });
     });
   }
-  step(data: State, info: any) {
-    this.io!.emit('data', data, info);
+  step(state: State, info: any) {
+    this.io!.emit('data', state, info);
   }
 }

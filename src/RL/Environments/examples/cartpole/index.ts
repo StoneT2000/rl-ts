@@ -123,7 +123,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     mode: RenderModes,
     configs: { fps: number; episode?: number; rewards?: number } = { fps: 60 }
   ): Promise<void> {
-    if (mode === 'human') {
+    if (mode === 'web') {
       if (!this.viewer.isInitialized()) await this.viewer.initialize(path.join(__dirname, '../'), 'cartpole/');
       const delayMs = 1 / (configs.fps / 1000);
       await sleep(delayMs);
@@ -135,7 +135,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
         ...configs,
       });
     } else {
-      throw new Error('Method not implemented.');
+      throw new Error(`${mode} is not an available render mode`);
     }
   }
 }

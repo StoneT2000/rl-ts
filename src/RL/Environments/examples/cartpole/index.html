@@ -23,8 +23,8 @@
   <body>
     <script>
       const socket = io();
-      socket.on('data', (data, info) => {
-        update(data, info);
+      socket.on('data', (state, info) => {
+        update(state, info);
       });
     </script>
     <div id="container"></div>

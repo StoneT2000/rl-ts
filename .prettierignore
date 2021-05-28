@@ -4,3 +4,4 @@ lib
 package-lock.json
 package.json
 *.min.js
+*.md

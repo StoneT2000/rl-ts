@@ -131,6 +131,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     const episodeDurations = [0];
     const episodeRewards = [0.0];
     let episodeIteration = 0;
+
     for (let t = 0; episodeIteration < configs.totalEpisodes; t++) {
       // Select and perform an action
       const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);

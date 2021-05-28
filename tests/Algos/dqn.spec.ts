@@ -37,7 +37,7 @@ describe('Test DQN', () => {
     });
 
     const evaluationRewards = [];
-    const evaluateModel = (data: { time: number; episodeRewards: number[] }) => {
+    const evaluateModel = () => {
       let state = dqn.env.reset();
       let reward = 0;
       while (true) {

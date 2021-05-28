@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>CartPole Viewer</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="../shared/p5.min.js"></script>
+    <script src="sketch.js"></script>
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        width: 100vw;
+      }
+      #container {
+        text-align: center;
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const socket = io();
+      socket.on('data', (data, info) => {
+        update(data, info);
+      });
+    </script>
+    <div id="container"></div>
+  </body>
+</html>

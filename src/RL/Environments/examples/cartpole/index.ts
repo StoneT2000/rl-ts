@@ -1,7 +1,9 @@
-import { Environment, RenderModes } from '..';
-import { Box, Discrete } from '../../Spaces';
+import { Environment, RenderModes } from '../..';
+import path from 'path';
+import { Box, Discrete } from '../../../Spaces';
 import nj, { NdArray } from 'numjs';
-import * as random from '../../utils/random';
+import * as random from '../../../utils/random';
+import { sleep } from '../../../utils/sleep';
 
 export type State = NdArray<number>;
 export type Action = number;
@@ -35,9 +37,10 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
   public steps_beyond_done: null | number = null;
   public timestep = 0;
   public maxEpisodeSteps = 500;
+  public globalTimestep = 0;
 
   constructor(configs: Partial<CartPoleConfigs> = {}) {
-    super();
+    super('CartPole');
     if (configs.maxEpisodeSteps) {
       this.maxEpisodeSteps = configs.maxEpisodeSteps;
     }
@@ -80,6 +83,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
 
     this.state = nj.array([x, x_dot, theta, theta_dot]);
     this.timestep += 1;
+    this.globalTimestep += 1;
 
     const done =
       x < -this.x_threshold ||
@@ -115,9 +119,21 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     };
   }
 
-  render(mode: RenderModes): void {
+  async render(
+    mode: RenderModes,
+    configs: { fps: number; episode?: number; rewards?: number } = { fps: 60 }
+  ): Promise<void> {
     if (mode === 'human') {
-      // open up web page displaying state and update the page with socket
+      if (!this.viewer.isInitialized()) await this.viewer.initialize(path.join(__dirname, '../'), 'cartpole/');
+      const delayMs = 1 / (configs.fps / 1000);
+      await sleep(delayMs);
+      await this.updateViewer(this.state, {
+        timestep: this.timestep,
+        globalTimestep: this.globalTimestep,
+        x_threshold: this.x_threshold,
+        pole_length: this.length,
+        ...configs,
+      });
     } else {
       throw new Error('Method not implemented.');
     }

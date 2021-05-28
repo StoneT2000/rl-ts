@@ -35,7 +35,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
     public targetPositions: Position[],
     public startPosition: Position
   ) {
-    super();
+    super('SimpleGridWorld');
     this.observationSpace = new Dict({
       grid: new PrimitiveBox2D(0, 1, [width, height]),
       agentPos: new Dict({

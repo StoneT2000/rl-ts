@@ -43,7 +43,7 @@ export interface DQNTrainConfigs<State, Action> {
   targetUpdateFreq: number;
   ckptFreq: number;
   learningStarts: number;
-  totalTimeSteps: number;
+  totalEpisodes: number;
   verbose: boolean;
   batchSize: number,
   
@@ -112,7 +112,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       policyTrainFreq: 1,
       targetUpdateFreq: 10,
       ckptFreq: 100,
-      totalTimeSteps: 10000,
+      totalEpisodes: 200,
       verbose: false,
       batchSize: 32,
       stepCallback: () => {},
@@ -128,7 +128,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     let episodeDurations = [0];
     let episodeRewards = [0.0];
     let episodeIteration = 0;
-    for (let t = 0; t < configs.totalTimeSteps; t++) {
+    for (let t = 0; episodeIteration < configs.totalEpisodes; t++) {
       // Select and perform an action
       const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);
       const action = this.actEps(state, eps);

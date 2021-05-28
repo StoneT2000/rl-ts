@@ -72,6 +72,8 @@ At the moment, the following algorithms are implemented:
   - [Policy Evaluation](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
   - [Policy Iteration](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
 
+Lastly, to install numjs without issues, run `npm i github:nicolaspanel/numjs` instead. `numjs` has not been updated on the npm registry for a while unfortunately.
+
 ## Road map and plans
 
 This library aims to be effectively a combination of the Open AI Gym and a miniature Stable Baselines, with more emphasis on naive RL algorithms to be used as a educational resource and help build more powerful and accessible environment viewers.

@@ -4,25 +4,39 @@
   "description": "",
   "main": "lib/es6/index.js",
   "scripts": {
-    "test": "nyc --reporter=html mocha tests/**/*.spec.ts",
+    "test": "mocha tests/**/*.spec.ts",
+    "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es6": "tsc --build tsconfig-es6.json",
     "build:es5": "tsc --build tsconfig.json",
     "build": "npm run build:es5 && npm run build:es6",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
-    "prettier": "prettier --write ."
+    "report": "nyc report",
+    "report:html": "nyc report --reporter=html",
+    "codecov": "nyc --reporter=json mocha tests/**/*.spec.ts",
+    "prettier": "prettier --write ./src ./tests",
+    "prettier:check": "prettier -c ./src ./tests",
+    "docs": "typedoc src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.15",
+    "@types/express": "^4.17.12",
     "@types/mocha": "^8.2.2",
+    "@types/ndarray": "^1.0.9",
+    "@types/ndarray-ops": "^1.2.1",
+    "@types/node": "^14.14.37",
+    "@types/numjs": "^0.16.0",
     "@types/seedrandom": "^3.0.0",
+    "@types/socket.io": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^4.20.0",
+    "@typescript-eslint/parser": "^4.20.0",
     "chai": "^4.3.0",
     "eslint": "^7.23.0",
     "mocha": "^8.3.2",
+    "ndarray-ops": "^1.2.2",
     "nyc": "^15.1.0",
     "prettier": "^2.2.1",
     "ts-node": "^9.1.1",
@@ -33,8 +47,17 @@
     "lib/"
   ],
   "dependencies": {
-    "@types/node": "^14.14.37",
-    "@types/numjs": "^0.14.5",
-    "seedrandom": "^3.0.5"
+    "@tensorflow/tfjs": "^3.6.0",
+    "@tensorflow/tfjs-node": "^3.6.1",
+    "@types/open": "^6.2.1",
+    "denque": "^1.5.0",
+    "express": "^4.17.1",
+    "ndarray": "^1.0.19",
+    "ndarray-pack": "^1.2.1",
+    "ndarray-unpack": "^1.0.0",
+    "numjs": "github:nicolaspanel/numjs",
+    "open": "^8.2.0",
+    "seedrandom": "^3.0.5",
+    "socket.io": "^4.1.2"
   }
 }

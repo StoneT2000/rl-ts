@@ -9,7 +9,6 @@ export abstract class Space<T> {
   // public static Box2D = Box2D;
 
   public rng: prng = seedrandom();
-  constructor() {}
   abstract sample(): T;
   abstract contains(x: T): boolean;
   abstract to_jsonable(sample_n: T[]): any;
@@ -18,6 +17,7 @@ export abstract class Space<T> {
     this.rng = seedrandom(seed);
   }
 }
-export { Box2D } from './box';
+export { Box } from './box';
+export { PrimitiveBox2D } from './primitiveBox2d';
 export { Discrete } from './discrete';
 export { Dict } from './dict';

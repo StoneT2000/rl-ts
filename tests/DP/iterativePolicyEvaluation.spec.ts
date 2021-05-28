@@ -1,55 +1,44 @@
 import { expect } from 'chai';
 import { DP } from '../../src';
-import { IterativePolicyEvaluation } from '../../src/RL/DP/iterativePolicyEvaluation';
 import { SimpleGridWorld } from '../../src/RL/Environments/examples';
 
 describe('Test Iterative Policy Evaluation', () => {
-  it.only('should evaluate equiprobable policy on simple grid world correctly', () => {
-    let width = 4;
-    let height = 4;
-    let targetPositions = [
+  it('should evaluate equiprobable policy on simple grid world correctly', () => {
+    const width = 4;
+    const height = 4;
+    const targetPositions = [
       { x: 3, y: 3 },
       { x: 0, y: 0 },
     ];
-    let env = new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
+    const makeEnv = () => {
+      return new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
+    };
 
     // the equiprobable policy
-    let policy = (action: number, state: typeof env.state) => {
+    const policy = () => {
       return 0.25;
     };
 
-    let envToStateRep = (env: SimpleGridWorld) => {
-      return env.state.agentPos.x + env.state.agentPos.y * Math.max(width, height);
-    };
-    let envFromStateRep = (stateString: string) => {
-      let hash = parseInt(stateString);
-      let m = Math.max(width, height);
-      let x = hash % m;
-      let y = Math.floor(hash / m);
-      return new SimpleGridWorld(width, height, targetPositions, { x, y });
-    };
-    let allStateReps = [];
+    const env = makeEnv();
+    const allStateReps = [];
     for (let x = 0; x < env.width; x++) {
       for (let y = 0; y < env.height; y++) {
-        let pos = { x: x, y: y };
-        let env = new SimpleGridWorld(width, height, targetPositions, pos);
-        allStateReps.push(envToStateRep(env));
+        const pos = { x: x, y: y };
+        const env = new SimpleGridWorld(width, height, targetPositions, pos);
+        allStateReps.push(env.stateToRep(env.reset()));
       }
     }
-    let policyEvaluator = new DP.IterativePolicyEvaluation(
-      env,
-      envToStateRep,
-      envFromStateRep,
+    const policyEvaluator = new DP.IterativePolicyEvaluation(makeEnv, {
       allStateReps,
       policy,
-      [0, 1, 2, 3]
-    );
+      allPossibleActions: [0, 1, 2, 3],
+    });
     policyEvaluator.train({
       verbose: false,
       steps: 10,
     });
 
-    let gtVals = [
+    const gtVals = [
       0.0,
       -6.14,
       -8.35,

@@ -1,42 +1,60 @@
-import { Agent } from '../Agent';
-import { Environment } from '../Environments';
+import { Dynamics, Environment, RepToState, StateToRep } from '../Environments';
 import { Space } from '../Spaces';
 
 //TODO: Handle stochastic environments
+
 export class IterativePolicyEvaluation<
   ActionSpace extends Space<Action>,
   ObservationSpace extends Space<State>,
   Action,
   State
 > {
-  public env: Environment<ActionSpace, ObservationSpace, Action, State, number>;
   public valueFunction: Map<any, number> = new Map();
-  public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
-  public dynamics: (sucessorState: State, reward: number, state: State, action: Action) => number;
+  // TODO: public valueActionFunction: Map<any, { value: number; action: Action }> = new Map();
+  private dynamics: Dynamics<State, Action, number>;
+  private stateToRep: StateToRep<State, any>;
+  private repToState: RepToState<State, any>;
   constructor(
-    env: Environment<ActionSpace, ObservationSpace, Action, State, number>,
-    /** Function to map environment to a hashable state representation */
-    public envToStateRep: (envToConvert: any) => any,
-    /** Function to map state representation to a usable environment of the same class as this evaluator was constructed with */
-    public envFromStateRep: (stateString: any) => typeof env,
-    /** A list of all possible state representations */
-    public allStateReps: any[],
-    /** The policy function to evaluate */
-    public policy: (action: Action, observation: State) => number,
-    /** A list of all possible valid actions */
-    public allPossibleActions: Action[],
-    /** The dynamics of the environment. Does not to be given if environment has predefined dynamics */
-    dynamics?: (sucessorState: State, reward: number, state: State, action: Action) => number,
+    /** Function that creates a new environment that can be reset to different states */
+    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, Action, number>,
+    public configs: {
+      /** Function to map environment to a hashable state representation. Required if environment does not provide this */
+      stateToRep?: StateToRep<State, any>;
+      /** Function to map state representation to a state to reset an environment to. Required if environment does not provide this */
+      repToState?: RepToState<State, any>;
+      /** A list of all possible state representations */
+      allStateReps: any[];
+      /** The policy function to evaluate */
+      policy: (action: Action, observation: State) => number;
+      /** A list of all possible valid actions */
+      allPossibleActions: Action[];
+      /** The dynamics of the environment. Required if environment does not provide this */
+      dynamics?: Dynamics<State, Action, number>;
+    }
   ) {
-    this.env = env;
-    allStateReps.forEach((s) => {
+    this.configs.allStateReps.forEach((s) => {
       this.valueFunction.set(s, 0);
     });
-    if (!dynamics) {
-      this.dynamics = this.env.dynamics;
+    // create an env to test it can be created and store relevant functions
+    const env = makeEnv();
+    if (!this.configs.dynamics) {
+      this.dynamics = env.dynamics;
     } else {
-      this.dynamics = dynamics;
+      this.dynamics = this.configs.dynamics;
     }
+    if (!this.configs.stateToRep) {
+      this.stateToRep = env.stateToRep;
+    } else {
+      this.stateToRep = this.configs.stateToRep;
+    }
+    if (!this.configs.repToState) {
+      this.repToState = env.repToState;
+    } else {
+      this.repToState = this.configs.repToState;
+    }
+  }
+  setPolicy(policy: (action: Action, observation: State) => number): void {
+    this.configs.policy = policy;
   }
   /**
    * Estimates the value function of the given policy
@@ -58,37 +76,39 @@ export class IterativePolicyEvaluation<
         // stop training if steps is provided and step > steps
         break;
       }
-      let updated_values = new Map();
+      const updated_values = new Map();
       if (verbose) {
         console.log(`Step ${step}`);
       }
       let delta = 0;
-      for (let stateString of this.allStateReps) {
-        let val = 0;
-        let s = this.envFromStateRep(stateString);
+      for (const rep of this.configs.allStateReps) {
+        const env = this.makeEnv();
         let v_pi_s = 0;
-        for (let action of this.allPossibleActions) {
-          let observation = s.reset();
-          let stepOut = s.step(action);
-          let p_srsa = this.policy(action, observation);
-          let reward = stepOut.reward;
-          let done = stepOut.done;
+        for (const action of this.configs.allPossibleActions) {
+          const state = this.repToState.bind(env)(rep);
+          const observation = env.reset(state);
+          const stepOut = env.step(action);
+          const p_srsa = this.configs.policy(action, observation);
+          const reward = stepOut.reward;
 
-          let sp_stateString = this.envToStateRep(s);
+          // note, we bind stateToRep because this function could be pulled from the environment and use the this keyword in it
+          const sp_stateRep = this.stateToRep.bind(env)(stepOut.observation);
 
-          let v_pi_sp = this.valueFunction.get(sp_stateString)!;
+          const v_pi_sp = this.valueFunction.get(sp_stateRep)!;
 
           // bind dynamics function to the current used environment
-          this.dynamics = this.dynamics.bind(s);
-          let p_sp_s_r = this.dynamics(stepOut.observation, reward, observation, action);
+
+          let p_sp_s_r = 0;
+          p_sp_s_r = this.dynamics.bind(env)(stepOut.observation, reward, observation, action);
+
           v_pi_s += p_srsa * p_sp_s_r * (reward + 1 * v_pi_sp);
         }
 
         // calculate max delta to determine stopping condition
-        let v_pi_s_old_val = this.valueFunction.get(stateString)!;
+        const v_pi_s_old_val = this.valueFunction.get(rep)!;
         delta = Math.max(delta, Math.abs(v_pi_s_old_val - v_pi_s));
 
-        updated_values.set(stateString, v_pi_s);
+        updated_values.set(rep, v_pi_s);
       }
       updated_values.forEach((v, k) => {
         this.valueFunction.set(k, v);

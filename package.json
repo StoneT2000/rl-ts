@@ -1,6 +1,6 @@
 {
   "name": "rl-ts",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "",
   "main": "lib/es6/index.js",
   "scripts": {
@@ -8,7 +8,9 @@
     "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es6": "tsc --build tsconfig-es6.json",
     "build:es5": "tsc --build tsconfig.json",
-    "build": "npm run build:es5 && npm run build:es6",
+    "clean": "rm -rf lib/",
+    "build:copy-files": "copyfiles -u 1 src/**/*.html src/**/*.css src/**/*.js lib/es6 && copyfiles -u 1 src/**/*.html src/**/*.css src/**/*.js lib/es5",
+    "build": "npm run clean && npm run build:es5 && npm run build:es6 && npm run build:copy-files",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --fix --ext .ts",
     "report": "nyc report",
@@ -34,6 +36,7 @@
     "@typescript-eslint/eslint-plugin": "^4.20.0",
     "@typescript-eslint/parser": "^4.20.0",
     "chai": "^4.3.0",
+    "copyfiles": "^2.4.1",
     "eslint": "^7.23.0",
     "mocha": "^8.3.2",
     "ndarray-ops": "^1.2.2",

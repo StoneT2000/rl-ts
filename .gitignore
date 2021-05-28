@@ -7,7 +7,10 @@ docs
 coverage
 .nyc_output
 coverage.json
+
+# scripts
 *.run.ts
+*.run.js
 
 # for macs
 .DS_Store

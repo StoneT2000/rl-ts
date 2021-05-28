@@ -4,13 +4,13 @@
 
 This is a RL gym and library built with **typescript**, enabling faster bug-free development, powerful web visuals, and a gateway to developing and comparing reinforcement learning algorithms on the web and / or with node.js
 
+![](https://github.com/StoneT2000/rl-ts/raw/main/src/RL/Environments/cartpole.gif)
+
 Install with
 
 ```
 npm install rl-ts
 ```
-
-To get started - WIP
 
 ## Features
 
@@ -27,6 +27,50 @@ While indeed production level reinforcement deep learning should be done with py
 into the browser and serve not only as a simple integration for visualizers, but also as a powerful web-based teaching tool on RL. Moreover, this library can help developers with a background in TS/JS ease their way into using python / C++ for RL.
 
 Inspired by [Andrej Karpathy's blog post](http://karpathy.github.io/2016/05/31/rl/), I'm building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained, nor is there really an emphasis on structured environments and viewers that leverage TS/JS. Typescript enables typing which massively improves the scalability and maintainability of this library and enables a much more in depth TS/JS based RL library.
+
+## Getting Started
+
+This library contains both integrated environments and various algorithms.
+
+To use environments, you can then create a new environment and step through it and render it. The following code produces the replay shown earlier in the readme, playing out 100 episodes of the CartPole environment and opening a web based viewer to render the environment.
+
+```js
+const RL = require('rl-ts');
+const env = new RL.Environments.Examples.CartPole();
+
+const main = async () => {
+  for (let episode = 0; episode < 100; episode++) {
+    let state = env.reset();
+    while (true) {
+      const action = env.actionSpace.sample();
+      const { reward, observation, done, info } = env.step(action);
+      state = observation;
+      await env.render('web', { fps: 60, episode });
+      if (done) break;
+    }
+  }
+};
+main();
+```
+
+To use algorithms, currently there are Algorithms and Dynammic Programming algorithms. At the core, the package relies on the [numjs](https://github.com/nicolaspanel/numjs) package (js numpy) and [tensorflow js (tfjs)](https://github.com/tensorflow/tfjs) for computations. By default, almost all data is stored in numjs arrays with data being stored in tfjs tensors only if necessary (e.g. for neural nets, autograd, optimization).
+
+```js
+const RL = require('rl-ts');
+const makeEnv = () => new RL.Environments.Examples.CartPole();
+// RL.Algos has Q-learning and policy gradient based methods
+const dqn = new RL.Algos.DQN(makeEnv, configs); // create a dqn model to then train policy / target networks
+// RL.DP has DP based methods
+const policyIteration = new RL.DP.PolicyIteration(makeEnv, configs); // create a policyIteration object to then run training
+```
+
+At the moment, the following algorithms are implemented:
+
+- Q-Learning
+  - [DQN](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Algos/dqn)
+- DP Methods
+  - [Policy Evaluation](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
+  - [Policy Iteration](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
 
 ## Road map and plans
 

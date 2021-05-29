@@ -9,18 +9,20 @@ import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
 import { Scalar } from '@tensorflow/tfjs';
 
-export interface DQNConfigs<State, Action> {
+export interface DQNConfigs<Observation, Action> {
   replayBufferCapacity: number;
   policyNet?: tf.LayersModel;
   targetNet?: tf.LayersModel;
-  stateToTensor: (state: State) => tf.Tensor;
+  /** Converts observations to tensors that can be used in optimization function */
+  obsToTensor: (state: Observation) => tf.Tensor;
+  /** Converts actions to tensors that can be used in optimization function */
   actionToTensor: (action: Action) => tf.Tensor;
   /** Optional act function to replace the default act */
-  act?: (state: State) => Action;
+  act?: (obs: Observation) => Action;
 }
-export interface DQNTrainConfigs<State, Action> {
+export interface DQNTrainConfigs<Observation, Action> {
   stepCallback(
-    stepData: Transition<State, Action> & {
+    stepData: Transition<Observation, Action> & {
       time: number;
       episodeDurations: number[];
       episodeRewards: number[];
@@ -48,34 +50,41 @@ export interface DQNTrainConfigs<State, Action> {
   batchSize: number;
 }
 
-export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Space<Action>, State, Action> extends Agent<
-  State,
+export class DQN<
+  ObservationSpace extends Space<Observation>,
+  ActionSpace extends Space<Action>,
+  Observation,
   Action
-> {
-  public configs: DQNConfigs<State, Action> = {
+> extends Agent<Observation, Action> {
+  public configs: DQNConfigs<Observation, Action> = {
     replayBufferCapacity: 1000,
-    stateToTensor: () => {
-      throw new Error('stateToTensor function not provided');
+    obsToTensor: (obs: Observation) => {
+      // eslint-disable-next-line
+      // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
+      const tensor = np.tensorLikeToTensor(obs);
+      return tensor.reshape([1, ...tensor.shape]);
     },
-    actionToTensor: () => {
-      throw new Error('actionToTensor function not provided');
+    actionToTensor: (action: Action) => {
+      // eslint-disable-next-line
+      // @ts-ignore - let this throw an error, which can happen if action space is dict. if action space is dict, user needs to override this.
+      return np.tensorLikeToTensor(action);
     },
   };
-  public replayBuffer: ReplayBuffer<State, Action>;
+  public replayBuffer: ReplayBuffer<Observation, Action>;
 
-  public env: Environment<ObservationSpace, ActionSpace, State, Action, number>;
+  public env: Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>;
 
   public policyNet: tf.LayersModel;
   public targetNet: tf.LayersModel;
 
-  private stateToTensor: (state: State) => tf.Tensor;
+  private obsToTensor: (obs: Observation) => tf.Tensor;
   private actionToTensor: (action: Action) => tf.Tensor;
 
   constructor(
     /** function that creates environment for interaction */
-    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, Action, number>,
+    public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
     /** configs for the DQN model */
-    configs: DeepPartial<DQNConfigs<State, Action>>
+    configs: DeepPartial<DQNConfigs<Observation, Action>>
   ) {
     super();
     this.configs = deepMerge(this.configs, configs);
@@ -84,9 +93,10 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     if (!this.configs.policyNet || !this.configs.targetNet) {
       throw new Error('Policy net or target net not provided');
     }
+    if (!this.env.actionSpace.meta.discrete) throw new Error('Action space is not discrete');
     this.policyNet = this.configs.policyNet;
     this.targetNet = this.configs.targetNet;
-    this.stateToTensor = this.configs.stateToTensor;
+    this.obsToTensor = this.configs.obsToTensor;
     this.actionToTensor = this.configs.actionToTensor;
     this.replayBuffer = new ReplayBuffer(this.configs.replayBufferCapacity);
   }
@@ -97,15 +107,15 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
    * @param observation - observation to select action off of
    * @returns action
    */
-  public act(observation: State): Action {
+  public act(observation: Observation): Action {
     if (this.configs.act) return this.configs.act(observation);
-    const pred = this.policyNet.predict(this.stateToTensor(observation), {}) as tf.Tensor;
-    const action = np.fromTensorSync(pred.argMax(1)).get(0);
+    const pred = this.policyNet.predict(this.obsToTensor(observation), {}) as tf.Tensor;
+    const action = np.tensorLikeToNdArray(pred.argMax(1)).get(0);
     return action as any;
   }
 
-  public async train(trainConfigs: Partial<DQNTrainConfigs<State, Action>>) {
-    let configs: DQNTrainConfigs<State, Action> = {
+  public async train(trainConfigs: Partial<DQNTrainConfigs<Observation, Action>>) {
+    let configs: DQNTrainConfigs<Observation, Action> = {
       optimizer: tf.train.adam(1e-3),
       gamma: 0.999,
       epsStart: 0.9,
@@ -136,6 +146,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       // Select and perform an action
       const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);
       const action = this.actEps(state, eps);
+
       const stepInfo = this.env.step(action);
 
       // store next state and push to replay buffer
@@ -196,14 +207,14 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     }
   }
 
-  private actEps(obs: State, eps: number): Action {
+  private actEps(obs: Observation, eps: number): Action {
     if (random.randomVal() > eps) {
       if (this.configs.act) return this.configs.act(obs);
-      const pred = this.policyNet.predict(this.stateToTensor(obs)) as tf.Tensor;
-      const action = np.fromTensorSync(pred.argMax(1)).get(0) as any;
+      const pred = this.policyNet.predict(this.obsToTensor(obs)) as tf.Tensor;
+      const action = np.fromTensorSync(pred.argMax(1)).get(0) as $TSFIXME;
       return action;
     } else {
-      return this.env.actionSpace.sample() as $TSFIXME;
+      return this.env.actionSpace.sample();
     }
   }
 
@@ -222,6 +233,7 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
     }
     const transitions = this.replayBuffer.sample(configs.batchSize);
     let loss = 0;
+
     tf.tidy(() => {
       const optimizer = configs.optimizer;
 
@@ -232,10 +244,10 @@ export class DQN<ObservationSpace extends Space<State>, ActionSpace extends Spac
       const _rewardBatch: any[] = [];
       const _doneBatch: any[] = [];
       for (let i = 0; i < configs.batchSize; i++) {
-        _stateBatch.push(this.stateToTensor(transitions[i].state));
+        _stateBatch.push(this.obsToTensor(transitions[i].state));
         _actionBatch.push(this.actionToTensor(transitions[i].action));
         _rewardBatch.push(transitions[i].reward);
-        _nextStateBatch.push(this.stateToTensor(transitions[i].nextState));
+        _nextStateBatch.push(this.obsToTensor(transitions[i].nextState));
         _doneBatch.push(transitions[i].done);
       }
 

@@ -14,20 +14,29 @@ export type StateToRep<State, Rep> = (state: State) => Rep;
 export type RepToState<State, Rep> = (rep: Rep) => State;
 
 // Extraction types to extract the generic type used in any environment
-export type ExtractObservationSpaceType<Env> = Env extends Environment<infer T, any, any, any, any> ? T : never;
-export type ExtractActionSpaceType<Env> = Env extends Environment<any, infer T, any, any, any> ? T : never;
-export type ExtractStateType<Env> = Env extends Environment<any, any, infer T, any, any> ? T : never;
-export type ExtractActionType<Env> = Env extends Environment<any, any, any, infer T, any> ? T : never;
-export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any, infer T> ? T : never;
+export type ExtractObservationSpaceType<Env> = Env extends Environment<infer T, any, any, any, any, any> ? T : never;
+export type ExtractActionSpaceType<Env> = Env extends Environment<any, infer T, any, any, any, any> ? T : never;
+export type ExtractObservationType<Env> = Env extends Environment<any, any, infer T, any, any, any> ? T : never;
+export type ExtractStateType<Env> = Env extends Environment<any, any, any, infer T, any, any> ? T : never;
+export type ExtractActionType<Env> = Env extends Environment<any, any, any, any, infer T, any> ? T : never;
+export type ExtractRewardType<Env> = Env extends Environment<any, any, any, any, any, infer T> ? T : never;
 
 /**
  * @class Environment
  *
- * A class for defining an environment that is fully observable. This is enforced by requiring the observation space return data of type state.
+ * A class for defining an environment.
+ *
+ * Requires ObservationSpace, ActionSpace definitions, which are spaces for Observation and Action.
+ *
+ * State type is a internal representation for convenience and passed to rendering functions
+ *
+ * Observation type should be something can be generally derived from State and is what interacting agents receive
+ *
  */
 export abstract class Environment<
-  ObservationSpace extends Space<State>,
+  ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>,
+  Observation,
   State,
   Action,
   Reward
@@ -52,13 +61,15 @@ export abstract class Environment<
    * @param action - the action to perform in the environment
    * @returns the new observed state, reward, and whether a terminal state has been reached (done) and any other info. Specifically return type is
    * {
-   *  observation: State,
+   *  observation: Observation,
    *  reward: Reward,
    *  done: boolean,
    *  info: any
    * }
+   *
+   * Note that the observation is not necessarily required to be of the same type as state.
    */
-  abstract step(action: Action): { observation: State; reward: Reward; done: boolean; info?: any };
+  abstract step(action: Action): { observation: Observation; reward: Reward; done: boolean; info?: any };
 
   /**
    * Resets the environment to an initial state and return the initial observation
@@ -67,7 +78,7 @@ export abstract class Environment<
    *
    * @param state - a state to load the environment with instead of generating an initial state. Note, not all environments are guranteed to use this
    */
-  abstract reset(state?: State): State;
+  abstract reset(state?: State): Observation;
 
   /**
    * Renders the environment
@@ -82,6 +93,13 @@ export abstract class Environment<
    */
   public async updateViewer(state: State, info: any = {}) {
     await this.viewer.step(state, info);
+  }
+  protected async sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, ms);
+    });
   }
 
   /**

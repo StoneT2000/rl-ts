@@ -1,12 +1,12 @@
 /**
  * Defines a generic agent
  */
-export abstract class Agent<State, Action> {
+export abstract class Agent<Observation, Action> {
   /**
    * Selects an action given the new observation
    * @param observation
    */
-  abstract act(observation: State): Action;
+  abstract act(observation: Observation): Action;
 
   /**
    * Override this function to let user's seed the agent's rng

@@ -16,7 +16,7 @@ export class IterativePolicyEvaluation<
   private repToState: RepToState<State, any>;
   constructor(
     /** Function that creates a new environment that can be reset to different states */
-    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, Action, number>,
+    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, State, Action, number>,
     public configs: {
       /** Function to map environment to a hashable state representation. Required if environment does not provide this */
       stateToRep?: StateToRep<State, any>;

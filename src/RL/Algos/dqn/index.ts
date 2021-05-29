@@ -232,9 +232,8 @@ export class DQN<
       return;
     }
     const transitions = this.replayBuffer.sample(configs.batchSize);
-    let loss = 0;
 
-    tf.tidy(() => {
+    const loss = tf.tidy(() => {
       const optimizer = configs.optimizer;
 
       // TODO: consider having user provide toTensor functions that handle batches?
@@ -276,7 +275,7 @@ export class DQN<
       }
       optimizer.applyGradients(grads.grads);
       this.targetNet.trainable = true;
-      loss = grads.value.dataSync()[0];
+      return grads.value.dataSync()[0];
     });
     return loss;
   }

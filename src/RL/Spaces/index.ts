@@ -10,6 +10,7 @@ export interface SpaceMeta {
  */
 export abstract class Space<T> {
   // public static Box2D = Box2D;
+  public shape: Shape = [];
   constructor(
     /** Meta data about the space such as if it is a discrete space or not */
     public meta: SpaceMeta

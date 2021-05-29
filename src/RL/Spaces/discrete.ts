@@ -7,6 +7,7 @@ import { randomRange } from '../utils/random';
 export class Discrete extends Space<number> {
   constructor(public n: number) {
     super({ discrete: true });
+    this.shape = [1];
   }
   sample(): number {
     return Math.floor(randomRange(this.rng, 0, this.n));

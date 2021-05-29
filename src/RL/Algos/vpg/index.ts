@@ -7,9 +7,9 @@ import { VPGBuffer, VPGBufferComputations } from './buffer';
 import { DeepPartial } from '../../utils/types';
 import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
-import { Scalar } from '@tensorflow/tfjs';
 import * as ct from '../../utils/clusterTools';
-export interface VPGConfigs<Observation, Action> {
+import { ActorCritic } from '../utils/models';
+export interface VPGConfigs<Observation extends tf.Tensor, Action> {
   /** Converts observations to tensors that can be used in optimization function */
   obsToTensor: (state: Observation) => tf.Tensor;
   /** Converts actions to tensors that can be used in optimization function */
@@ -17,7 +17,7 @@ export interface VPGConfigs<Observation, Action> {
   /** Optional act function to replace the default act */
   act?: (obs: Observation) => Action;
 }
-export interface DQNTrainConfigs<Observation, Action> {
+export interface VPGTrainConfigs {
   stepCallback(
     stepData: {
       step: number;
@@ -50,12 +50,11 @@ export interface DQNTrainConfigs<Observation, Action> {
   /** maximum length of each trajectory collected */
   max_ep_len: number;
 }
-
+type Action = tf.Tensor;
 export class VPG<
   ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>,
-  Observation,
-  Action
+  Observation extends tf.Tensor
 > extends Agent<Observation, Action> {
   public configs: VPGConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
@@ -68,7 +67,7 @@ export class VPG<
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if action space is dict. if action space is dict, user needs to override this.
       return np.tensorLikeToTensor(action);
-    },
+    }
   };
 
   public env: Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>;
@@ -79,7 +78,9 @@ export class VPG<
   constructor(
     /** function that creates environment for interaction */
     public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
-    /** configs for the DQN model */
+    /** The actor crtic model */
+    public ac: ActorCritic<Observation>,
+    /** configs for the VPG model */
     configs: DeepPartial<VPGConfigs<Observation, Action>>
   ) {
     super();
@@ -98,14 +99,11 @@ export class VPG<
    * @returns action
    */
   public act(observation: Observation): Action {
-    if (this.configs.act) return this.configs.act(observation);
-    const pred = this.policyNet.predict(this.obsToTensor(observation), {}) as tf.Tensor;
-    const action = np.tensorLikeToNdArray(pred.argMax(1)).get(0);
-    return action as any;
+    return this.ac.act(observation) as tf.Tensor;
   }
 
-  public async train(trainConfigs: Partial<DQNTrainConfigs<Observation, Action>>) {
-    let configs: DQNTrainConfigs<Observation, Action> = {
+  public async train(trainConfigs: Partial<VPGTrainConfigs>) {
+    let configs: VPGTrainConfigs = {
       vf_optimizer: tf.train.adam(1e-3),
       pi_optimizer: tf.train.adam(1e-3),
       ckptFreq: 1000,
@@ -132,8 +130,8 @@ export class VPG<
     const buffer = new VPGBuffer({
       gamma: configs.gamma,
       lam: configs.lam,
-      actDim: this.configs.actDim,
-      obsDim: this.configs.obsDim,
+      actDim: act_dim,
+      obsDim: obs_dim,
       size: local_steps_per_epoch
     });
 

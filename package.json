@@ -4,7 +4,7 @@
   "description": "",
   "main": "lib/es6/index.js",
   "scripts": {
-    "test": "mocha tests/**/*.spec.ts",
+    "test": "mocha --recursive 'tests/**/*.spec.ts'",
     "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es6": "tsc --build tsconfig-es6.json",
     "build:es5": "tsc --build tsconfig.json",
@@ -51,6 +51,7 @@
   ],
   "dependencies": {
     "@tensorflow/tfjs": "^3.6.0",
+    "@tensorflow/tfjs-layers": "^3.6.0",
     "@tensorflow/tfjs-node": "^3.6.1",
     "@types/open": "^6.2.1",
     "denque": "^1.5.0",

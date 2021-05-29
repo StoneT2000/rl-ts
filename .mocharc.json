@@ -3,6 +3,5 @@
   "r": "ts-node/register",
   "check-leaks": true,
   "full-trace": true,
-  "recursive": true,
   "timeout": 10000
 }

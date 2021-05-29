@@ -44,7 +44,11 @@ export interface DQNTrainConfigs<Observation, Action> {
   epsDecay: number;
   policyTrainFreq: number;
   targetUpdateFreq: number;
+  /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
   ckptFreq: number;
+  /** path to store saved models in. */
+  savePath?: string;
+  saveLocation?: TFSaveLocations;
   learningStarts: number;
   totalEpisodes: number;
   verbose: boolean;
@@ -125,7 +129,7 @@ export class DQN<
       learningStarts: 0,
       policyTrainFreq: 1,
       targetUpdateFreq: 10,
-      ckptFreq: 100,
+      ckptFreq: 1000,
       totalEpisodes: 200,
       verbose: false,
       batchSize: 32,
@@ -170,10 +174,18 @@ export class DQN<
           optimizer,
         });
       }
-
-      if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
-        // TODO
+      if (configs.savePath && configs.saveLocation) {
+        if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
+          const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
+          const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
+          if (configs.verbose) {
+            console.log(`Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
+          }
+          this.policyNet.save(policyNetSavePath);
+          this.targetNet.save(targetNetSavePath);
+        }
       }
+
       // TODO: allow user to specify async step callbacks
       await configs.stepCallback({
         state,
@@ -230,7 +242,11 @@ export class DQN<
   /**
    * Run a step of optimization
    */
-  public async optimizeModel(configs: { optimizer: tf.Optimizer; batchSize: number; gamma: number }): Promise<number | null> {
+  public async optimizeModel(configs: {
+    optimizer: tf.Optimizer;
+    batchSize: number;
+    gamma: number;
+  }): Promise<number | null> {
     if (this.replayBuffer.length < configs.batchSize) {
       return null;
     }

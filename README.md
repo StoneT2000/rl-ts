@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/rl-ts.svg)](https://badge.fury.io/js/rl-ts)
 
-This is a RL gym and library built with **typescript**, enabling faster bug-free development, powerful web visuals, and a gateway to developing and comparing reinforcement learning algorithms on the web and / or with node.js
+This is a RL gym and library built with **typescript** on top of tensorflow, enabling faster bug-free development, powerful web visuals, and a gateway to developing and comparing reinforcement learning algorithms on the web and / or with node.js in javascript or typescript.
 
 ![](https://github.com/StoneT2000/rl-ts/raw/main/src/RL/Environments/cartpole.gif)
 
@@ -14,11 +14,11 @@ npm install rl-ts
 
 ## Features
 
-- Uses a **Open AI Gym** like interface to provide an accessible and general approach for developing environments and testing models
+- Uses a **Open AI Gym** like interface to provide an accessible and general approach for developing environments and testing algorithms
 
-- Provides [standard integrated environments](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Environments) like CartPole
+- Provides [standard integrated environments](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Environments) like **CartPole** and **GridWorld**
 
-- Provides a toolbox of baseline agents such as DQN, as well as other algorithms like policy iteration.
+- Provides a toolbox of baseline agents such as **DQN**, as well as other algorithms like policy iteration.
 
 - **typescript** means types, less bugs, and powerful, easily buildable, visuals.
 

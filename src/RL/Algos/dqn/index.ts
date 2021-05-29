@@ -23,15 +23,16 @@ export interface DQNConfigs<Observation, Action> {
 export interface DQNTrainConfigs<Observation, Action> {
   stepCallback(
     stepData: Transition<Observation, Action> & {
-      time: number;
+      step: number;
       episodeDurations: number[];
       episodeRewards: number[];
       episodeIteration: number;
       info: any;
+      loss: number | null;
     }
   ): any;
   epochCallback(epochDate: {
-    time: number;
+    step: number;
     episodeDurations: number[];
     episodeRewards: number[];
     episodeIteration: number;
@@ -161,8 +162,9 @@ export class DQN<
       episodeRewards[episodeRewards.length - 1] += reward;
 
       // perform a step of optimization on policy net
+      let loss: number | null = null;
       if (t >= configs.learningStarts && t % configs.policyTrainFreq === 0) {
-        await this.optimizeModel({
+        loss = await this.optimizeModel({
           gamma,
           batchSize: configs.batchSize,
           optimizer,
@@ -178,12 +180,13 @@ export class DQN<
         nextState,
         reward,
         action,
-        time: t,
+        step: t,
         episodeRewards,
         episodeDurations,
         episodeIteration,
         info: stepInfo.info,
         done,
+        loss,
       });
 
       if (done) {
@@ -193,7 +196,7 @@ export class DQN<
         }
 
         await configs.epochCallback({
-          time: t,
+          step: t,
           episodeDurations,
           episodeRewards,
           episodeIteration,
@@ -227,9 +230,9 @@ export class DQN<
   /**
    * Run a step of optimization
    */
-  public async optimizeModel(configs: { optimizer: tf.Optimizer; batchSize: number; gamma: number }) {
+  public async optimizeModel(configs: { optimizer: tf.Optimizer; batchSize: number; gamma: number }): Promise<number | null> {
     if (this.replayBuffer.length < configs.batchSize) {
-      return;
+      return null;
     }
     const transitions = this.replayBuffer.sample(configs.batchSize);
 

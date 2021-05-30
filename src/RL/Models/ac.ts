@@ -75,7 +75,7 @@ export class MLPGaussianActor extends ActorBase<tf.Tensor> {
   }
   _log_prob_from_distribution(pi: Normal, act: tf.Tensor): tf.Tensor {
     // TODO: check need sum(-1)? torch needs it
-    return pi.logProb(act);
+    return pi.logProb(act).sum(-1);
   }
 }
 

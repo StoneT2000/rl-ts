@@ -107,7 +107,7 @@ export class VPG<
   public async train(trainConfigs: Partial<VPGTrainConfigs>) {
     let configs: VPGTrainConfigs = {
       vf_optimizer: tf.train.adam(1e-3),
-      pi_optimizer: tf.train.adam(1e-3),
+      pi_optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
       verbose: false,
       steps_per_epoch: 10000,
@@ -151,12 +151,16 @@ export class VPG<
       const {obs, act, adv} = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
-        console.log(obs.shape)
+        // console.log("ACT",act.shape)
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
+        // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean();
-
         let approx_kl = logp_old.sub(logp_a!).mean().arraySync();
         let ent = pi.entropy().mean().arraySync();
+        //@ts-ignore
+        console.log(pi.tf_mean.arraySync(), pi.tf_std.arraySync());
+        // console.log(obs.arraySync());
+        // console.log(this.ac.pi.apply())
         return {
           loss_pi,
           pi_info: {
@@ -182,6 +186,7 @@ export class VPG<
       const pi_grads = pi_optimizer.computeGradients(() => {
         const {loss_pi, pi_info} = compute_loss_pi(data);
         pi_info_new = pi_info as typeof pi_info_new;
+        console.log({loss_pi: loss_pi.arraySync()})
         return loss_pi as tf.Scalar;
       });
       // TODO: mpi avg grads here
@@ -199,6 +204,7 @@ export class VPG<
       // log changes
       console.log("=====")
       console.log("KL, ENT", pi_info_new!);
+      console.log(loss_pi_old.loss_pi.sub(pi_grads.value).arraySync());
     }
 
     let start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
@@ -206,12 +212,15 @@ export class VPG<
     let ep_ret = 0;
     let ep_len = 0;
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
+      let avg_rep_ret = 0;
+      let finished_trajectories = 0;
       for (let t = 0; t < local_steps_per_epoch; t++) {
         // TODO
         let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         let action = np.tensorLikeToNdArray(this.actionToTensor(a));
         let stepInfo = env.step(action);
         let next_o = stepInfo.observation;
+        //@ts-ignore
         let r = stepInfo.reward;
         let d = stepInfo.done;
         ep_ret += 1;
@@ -231,14 +240,16 @@ export class VPG<
           }
           let v = 0;
           if (timeout || epoch_ended) {
-            v = (this.ac.step(np.tensorLikeToTensor(o)).v.arraySync() as number[])[0];
+            v = (this.ac.step(this.obsToTensor(o)).v.arraySync() as number[][])[0][0]
           }
           buffer.finishPath(v);
           if (terminal) {
             // store ep ret and eplen stuff
+            avg_rep_ret += ep_ret;
+            finished_trajectories += 1;
           }
           o = env.reset();
-          console.log({terminal, t, epoch_ended, epoch, ep_len, ep_ret})
+          // console.log({terminal, t, epoch_ended, epoch, ep_len, ep_ret})
           ep_ret = 0; ep_len = 0;
         }
       }
@@ -248,6 +259,10 @@ export class VPG<
       await update();
 
       // log info about the epoch!?
+      avg_rep_ret /= finished_trajectories;
+      console.log({
+        avg_rep_ret,
+      })
     }
   }
 }

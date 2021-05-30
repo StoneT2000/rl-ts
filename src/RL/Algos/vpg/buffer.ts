@@ -67,8 +67,8 @@ export class VPGBuffer {
   public store(obs: NdArray, act: NdArray, rew: number, val: number, logp: number) {
     if (this.ptr >= this.maxSize) throw new Error('Experience Buffer has no room');
     let slice = [this.ptr, this.ptr + 1]
-    this.obsBuf.slice(slice).assign(obs);
-    this.actBuf.slice(slice).assign(act);
+    this.obsBuf.slice(slice).assign(obs, false);
+    this.actBuf.slice(slice).assign(act, false);
     this.rewBuf.set(this.ptr, rew);
     this.valBuf.set(this.ptr, val);
     this.logpBuf.set(this.ptr, logp);
@@ -91,7 +91,7 @@ export class VPGBuffer {
     this.advBuf.slice(path_slice).assign(core.discountCumSum(deltas, this.gamma * this.lam), false);
 
     // compute rewards-to-go
-    this.retBuf.slice(path_slice).assign(core.discountCumSum(rews, this.gamma).slice([0, -1]));
+    this.retBuf.slice(path_slice).assign(core.discountCumSum(rews, this.gamma).slice([0, -1]), false);
 
     this.pathStartIdx = this.ptr;
   }

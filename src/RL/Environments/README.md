@@ -2,7 +2,7 @@
 
 ![](./cartpole.gif)
 
-These are the main, **integrated environments** of the `rl-ts` package. To create an environment and step through it and render the environment. These integrated environments are actively maintained.
+These are the main, **integrated environments** of the `rl-ts` package that are maintained. To create an environment and step through it and render the environment:
 
 ```js
 const RL = require('rl-ts');
@@ -25,7 +25,11 @@ main();
 
 This will automatically open up a webpage that renders the classical CartPole environment at ~60 fps at every step.
 
-Note that when rendering, it is highly recommended to use await / async to then wait for the render to finish before stepping forward, otherwise there may be bugs.
+Note that when rendering, it is highly recommended to use await / async to then wait for the render to finish before stepping forward, otherwise there may be visual glitches.
+
+There are some small *caveats* to keep in mind when using these environments. All of these environments use only NdArrays from the [numjs](https://github.com/nicolaspanel/numjs) package instead of javascript arrays or tensorflow tensors. The only other value that is isallowed are scalar numbers. Therefore actions fed into the environment must first be converted to an NdArray or a number. Moreover, any kind of observation and data coming out of the environment will also be an NdArray or number. For example, the CartPole environment returns a 4D NdArray (vector) as observations and accepts numbers as actions.
+
+3rd party environments have no such gurantee but sticking to NdArrays is highly recommended as it will work out of the box with every baseline algorithm (e.g. DQN) and tool in this repo.
 
 ## Rendering
 
@@ -63,7 +67,7 @@ await this.sleep(delay);
 await this.updateViewer(state, info);
 ```
 
-State can be anything but it is recommended to be the state. Info can be an object with information about the environment. `state` and `info` will be sent to the webpage via websockets using the socket.io package.
+State can be anything but it is recommended to be the full state. Info can be an object with information about the environment. `state` and `info` will be sent to the webpage via websockets using the socket.io package.
 
 To create the html and js and make it work with the environment, you can first copy [index.html]() and [sketch.js]() from the CartPole environment as a template. This tutorial uses the [p5js](https://p5js.org/) library to render the environment.
 

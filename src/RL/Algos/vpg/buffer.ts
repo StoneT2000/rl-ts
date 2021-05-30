@@ -1,8 +1,8 @@
-import * as random from '../../utils/random';
 import * as tf from '@tensorflow/tfjs';
 import nj, { NdArray } from 'numjs';
 import * as np from '../../utils/np';
 import * as core from '../utils/core';
+import { Tensor1D } from '@tensorflow/tfjs';
 export interface VPGBufferConfigs {
   obsDim: number[];
   actDim: number[];
@@ -65,13 +65,12 @@ export class VPGBuffer {
   }
   public store(obs: NdArray, act: NdArray, rew: number, val: number, logp: number) {
     if (this.ptr >= this.maxSize) throw new Error('Experience Buffer has no room');
-    this.obsBuf.slice([this.ptr]).assign(obs);
-
-    this.actBuf.slice([this.ptr]).assign(act);
-    this.rewBuf.slice([this.ptr]).assign(rew);
-    this.valBuf.slice([this.ptr]).assign(val);
-    this.logpBuf.slice([this.ptr]).assign(logp);
-
+    const slice = [this.ptr, this.ptr + 1];
+    this.obsBuf.slice(slice).assign(obs, false);
+    this.actBuf.slice(slice).assign(act, false);
+    this.rewBuf.set(this.ptr, rew);
+    this.valBuf.set(this.ptr, val);
+    this.logpBuf.set(this.ptr, logp);
     this.ptr += 1;
   }
 
@@ -91,12 +90,12 @@ export class VPGBuffer {
     this.advBuf.slice(path_slice).assign(core.discountCumSum(deltas, this.gamma * this.lam), false);
 
     // compute rewards-to-go
-    this.retBuf.slice(path_slice).assign(core.discountCumSum(rews, this.gamma).slice([0, -1]));
+    this.retBuf.slice(path_slice).assign(core.discountCumSum(rews, this.gamma).slice([0, -1]), false);
 
     this.pathStartIdx = this.ptr;
   }
 
-  public async get() {
+  public async get(): Promise<VPGBufferComputations> {
     if (this.ptr !== this.maxSize) {
       throw new Error("Buffer isn't full yet!");
     }
@@ -111,10 +110,10 @@ export class VPGBuffer {
     this.advBuf = await np.fromTensor(advBuf);
     return {
       obs: np.toTensor(this.obsBuf),
-      act: np.toTensor(this.actBuf),
-      ret: np.toTensor(this.retBuf),
-      adv: advBuf,
-      logp: np.toTensor(this.logpBuf),
+      act: np.toTensor(this.actBuf) as Tensor1D,
+      ret: np.toTensor(this.retBuf) as Tensor1D,
+      adv: advBuf as Tensor1D,
+      logp: np.toTensor(this.logpBuf) as Tensor1D,
     };
   }
 }

@@ -6,6 +6,9 @@ This is a RL gym and library built with **typescript** on top of tensorflow, ena
 
 ![](https://github.com/StoneT2000/rl-ts/raw/main/src/RL/Environments/cartpole.gif)
 
+**Table of Contents**
+- [Features](#Features)
+
 Install with
 
 ```
@@ -18,7 +21,7 @@ npm install rl-ts
 
 - Provides [standard integrated environments](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Environments) like **CartPole** and **GridWorld**
 
-- Provides a toolbox of baseline agents such as **DQN**, as well as other algorithms like policy iteration.
+- Provides a toolbox of baseline algorithms such as **Deep Q Networks (DQN)**, **Policy Gradient methods**, as well as other algorithms like policy iteration.
 
 - **typescript** means types, less bugs, and powerful, easily buildable, visuals.
 
@@ -26,7 +29,7 @@ Why RL with typescript / javascript (TS/JS)? TS/JS powers the web and a ton of t
 While indeed production level reinforcement deep learning should be done with python / C++, TS/JS makes it easy to directly integrate RL
 into the browser and serve not only as a simple integration for visualizers, but also as a powerful web-based teaching tool on RL. Moreover, this library can help developers with a background in TS/JS ease their way into using python / C++ for RL.
 
-Inspired by [Andrej Karpathy's blog post](http://karpathy.github.io/2016/05/31/rl/), I'm building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained, nor is there really an emphasis on structured environments and viewers that leverage TS/JS. Typescript enables typing which massively improves the scalability and maintainability of this library and enables a much more in depth TS/JS based RL library.
+
 
 ## Getting Started
 
@@ -53,7 +56,9 @@ const main = async () => {
 main();
 ```
 
-To use algorithms, currently there are Algorithms and Dynammic Programming algorithms. At the core, the package relies on the [numjs](https://github.com/nicolaspanel/numjs) package (js numpy) and [tensorflow js (tfjs)](https://github.com/tensorflow/tfjs) for computations. By default, almost all data is stored in numjs arrays with data being stored in tfjs tensors only if necessary (e.g. for neural nets, autograd, optimization).
+To use algorithms, currently there are Algorithms and Dynammic Programming algorithms. At the core, the package relies on the [numjs](https://github.com/nicolaspanel/numjs) package (js numpy) and [tensorflow js (tfjs)](https://github.com/tensorflow/tfjs) for computations. numjs provides NdArrays which are used by all integrated environments, spaces.
+
+By default, almost all data is stored in numjs arrays with data being stored in tfjs tensors only for algorithms
 
 ```js
 const RL = require('rl-ts');
@@ -97,3 +102,7 @@ To run tests run
 ```
 npm run tests
 ```
+
+## Other
+
+Inspired by [Andrej Karpathy's blog post](http://karpathy.github.io/2016/05/31/rl/), I started building this to get a strong, end to end understanding of deep learning and reinforcement learning. While one could just use his library or some of the other ones out there, none of them are built with typescript / actively maintained, nor is there really an emphasis on structured environments and viewers that leverage TS/JS. Typescript enables typing which massively improves the scalability and maintainability of this library and enables a much more in depth TS/JS based RL library.

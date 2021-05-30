@@ -3,10 +3,11 @@ import path from 'path';
 import { Box, Discrete } from '../../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../../utils/random';
+import { tensorLikeToNdArray } from '../../../utils/np';
 
 export type State = NdArray<number>;
 export type Observation = NdArray<number>;
-export type Action = number;
+export type Action = number | TensorLike;
 export type ActionSpace = Discrete;
 export type ObservationSpace = Box;
 export type Reward = number;
@@ -65,8 +66,9 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, Observa
     let x_dot = this.state.get(1);
     let theta = this.state.get(2);
     let theta_dot = this.state.get(3);
+    const a = tensorLikeToNdArray(action).get(0);
 
-    const force = action === 1 ? this.force_mag : -this.force_mag;
+    const force = a === 1 ? this.force_mag : -this.force_mag;
     const costheta = Math.cos(theta);
     const sintheta = Math.sin(theta);
 
@@ -108,7 +110,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, Observa
       reward = 0.0;
     }
 
-    if (!this.actionSpace.contains(action)) {
+    if (!this.actionSpace.contains(a)) {
       throw new Error(`${action} is invalid action in cartpole env`);
     }
     return {

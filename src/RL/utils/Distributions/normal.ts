@@ -1,9 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
 import * as np from '../np';
-import nj, { NdArray } from 'numjs';
-import ops from 'ndarray-ops';
+import { NdArray } from 'numjs';
 import { Distribution } from '.';
-import ndarray from 'ndarray';
 const logsqrtpi2 = Math.log(Math.sqrt(Math.PI * 2));
 /**
  * A normal distribution
@@ -46,14 +44,14 @@ export class Normal extends Distribution {
     // const logScale = _logScale.toTensor();
     // console.log(variance.print())
     // variance.slice([0, 1], [0, 1]).print();
-    let denom = variance.mul(2);
+    const denom = variance.mul(2);
     return value.sub(this.tf_mean).pow(2).neg().div(denom).sub(logScale).sub(logsqrtpi2);
   }
   entropy() {
     const _logScale = tf.buffer(this.mean.shape);
     for (let i = 0; i < _logScale.size; i++) {
-      let loc = _logScale.indexToLoc(i);
-      let std = this.std.get(...loc);
+      const loc = _logScale.indexToLoc(i);
+      const std = this.std.get(...loc);
       _logScale.set(Math.log(std), ...loc);
     }
     const logScale = _logScale.toTensor();

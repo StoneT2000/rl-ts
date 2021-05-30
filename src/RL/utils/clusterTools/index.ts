@@ -34,9 +34,8 @@ const handleOp = async (x: tf.Tensor, rest: tf.Tensor, op: OPS) => {
  */
 export const reduce = async (x: tf.Tensor, op: OPS) => {
   if (cluster.isMaster) {
-    let results: tf.Tensor[] = [];
-    let res = await mpi.receiveAll();
-    let val = tf.tensor(res.map((v) => v.data! as number)); // [P, ...shape] (P = number of workers)
+    const res = await mpi.receiveAll();
+    const val = tf.tensor(res.map((v) => v.data! as number)); // [P, ...shape] (P = number of workers)
     switch (op) {
       case OPS.SUM:
         return x.add(val.sum(0));
@@ -47,14 +46,13 @@ export const reduce = async (x: tf.Tensor, op: OPS) => {
 };
 
 /**
- * Calls reduce and then the primary broadcasts result to all workers
+ * Performs reduction and then broadcasts result to all workers
  * @param x
  * @param op
  */
 export const allreduce = async (x: tf.Tensor, op: OPS) => {
   if (cluster.isMaster) {
-    let results: tf.Tensor[] = [];
-    let res = await mpi.receiveAll();
+    const res = await mpi.receiveAll();
     let val = tf.tensor(res.map((v) => v.data! as number)); // [P, ...shape] (P = number of workers)
     val = await handleOp(x, val, op);
     await mpi.sendall({ type: mpi.MessageType.SEND, data: mpi.tensorToSerializable(val) });
@@ -71,7 +69,7 @@ export const sum = async (x: tf.Tensor) => {
 };
 
 export const avg = async (x: tf.Tensor) => {
-  let val = await allreduce(x, OPS.SUM);
+  const val = await allreduce(x, OPS.SUM);
   return val.div(mpi.numProcs());
 };
 

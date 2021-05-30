@@ -1,4 +1,3 @@
-import * as random from '../../utils/random';
 import * as tf from '@tensorflow/tfjs';
 import nj, { NdArray } from 'numjs';
 import * as np from '../../utils/np';
@@ -66,7 +65,7 @@ export class VPGBuffer {
   }
   public store(obs: NdArray, act: NdArray, rew: number, val: number, logp: number) {
     if (this.ptr >= this.maxSize) throw new Error('Experience Buffer has no room');
-    let slice = [this.ptr, this.ptr + 1];
+    const slice = [this.ptr, this.ptr + 1];
     this.obsBuf.slice(slice).assign(obs, false);
     this.actBuf.slice(slice).assign(act, false);
     this.rewBuf.set(this.ptr, rew);

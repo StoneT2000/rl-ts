@@ -1,8 +1,6 @@
 import * as tf from '@tensorflow/tfjs-node';
-import { OPS } from './ops';
 import cluster from 'cluster';
 import { Serializable } from 'node:child_process';
-import os from 'os';
 
 export enum MessageType {
   INIT,
@@ -13,18 +11,12 @@ export interface Message {
   data?: Serializable;
 }
 
-// let receivePromise: Promise<Message>;
-const numCPUs = os.cpus().length;
 let workers: cluster.Worker[] = [];
 let _procCount = 1;
 let _id = 0;
-export const setupMPI = async () => {
-  // receivePromise = new Promise((resolve, reject) => {
-  // process.once('message', (m) => {
-  //   resolve(m);
-  // });
-  // });
-};
+// export const setupMPI = async () => {
+// TODO: do any setup here if needed
+// };
 
 export const fork = async (forkCount: number) => {
   const listeningPromises: Array<Promise<cluster.Worker>> = [];
@@ -48,7 +40,7 @@ export const fork = async (forkCount: number) => {
     _id = 0;
   } else {
     // wait for message
-    let data = (await receive()).data! as number[];
+    const data = (await receive()).data! as number[];
     _id = data[0];
     _procCount = data[1];
   }
@@ -62,7 +54,7 @@ export const send = async (msg: Message, worker: cluster.Worker | NodeJS.Process
   });
 };
 export const sendall = async (msg: Message) => {
-  let results: Promise<void>[] = [];
+  const results: Promise<void>[] = [];
   workers.forEach((worker) => {
     results.push(send(msg, worker));
   });
@@ -70,7 +62,7 @@ export const sendall = async (msg: Message) => {
 };
 
 export const receiveFromWorker = async (worker: cluster.Worker): Promise<Message> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     worker.once('message', (m) => {
       resolve(m);
     });
@@ -78,7 +70,7 @@ export const receiveFromWorker = async (worker: cluster.Worker): Promise<Message
 };
 
 export const receiveAll = async () => {
-  let results: Promise<Message>[] = [];
+  const results: Promise<Message>[] = [];
   workers.forEach((worker) => {
     results.push(receiveFromWorker(worker));
   });
@@ -86,7 +78,8 @@ export const receiveAll = async () => {
 };
 
 export const receive = async (): Promise<Message> => {
-  return new Promise((resolve, reject) => {
+  // TODO: can this fail?
+  return new Promise((resolve) => {
     process.once('message', (m) => {
       resolve(m);
     });

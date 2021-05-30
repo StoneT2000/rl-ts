@@ -8,7 +8,7 @@ import { DeepPartial } from '../../utils/types';
 import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
 import * as ct from '../../utils/clusterTools';
-import nj, { NdArray } from 'numjs';
+import { NdArray } from 'numjs';
 import { ActorCritic } from '../../Models/ac';
 export interface VPGConfigs<Observation, Action> {
   /** Converts observations to tensors */
@@ -129,11 +129,11 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     random.seed(configs.seed);
     // TODO: seed tensorflow if possible
 
-    let env = this.env;
-    let obs_dim = env.observationSpace.shape;
-    let act_dim = env.actionSpace.shape;
+    const env = this.env;
+    const obs_dim = env.observationSpace.shape;
+    const act_dim = env.actionSpace.shape;
 
-    let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    const local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
 
     const buffer = new VPGBuffer({
       gamma: configs.gamma,
@@ -154,8 +154,8 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean().mul(-1);
-        let approx_kl = logp_old.sub(logp_a!).mean().arraySync();
-        let ent = pi.entropy().mean().arraySync();
+        const approx_kl = logp_old.sub(logp_a!).mean().arraySync();
+        const ent = pi.entropy().mean().arraySync();
         return {
           loss_pi,
           pi_info: {
@@ -175,7 +175,8 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       const loss_pi_old = compute_loss_pi(data);
       for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
-          const { loss_pi, pi_info } = compute_loss_pi(data);
+          // TODO: avg KL divergence approximation
+          const { loss_pi } = compute_loss_pi(data);
           return loss_pi as tf.Scalar;
         });
         // TODO: mpi avg grads here
@@ -193,12 +194,12 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       // TODO
       // log changes
       console.log('==============');
-      let loss_pi_new = compute_loss_pi(data);
+      const loss_pi_new = compute_loss_pi(data);
       const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
       console.log({ info: loss_pi_new.pi_info, delta_pi_loss });
     };
 
-    let start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
+    // const start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
     let o = env.reset();
     let ep_ret = 0;
     let ep_len = 0;
@@ -207,13 +208,13 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       let finished_trajectories = 0;
       for (let t = 0; t < local_steps_per_epoch; t++) {
         // TODO
-        let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
-        let action = np.tensorLikeToNdArray(this.actionToTensor(a));
-        let stepInfo = env.step(action);
-        let next_o = stepInfo.observation;
+        const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
+        const action = np.tensorLikeToNdArray(this.actionToTensor(a));
+        const stepInfo = env.step(action);
+        const next_o = stepInfo.observation;
 
-        let r = stepInfo.reward;
-        let d = stepInfo.done;
+        const r = stepInfo.reward;
+        const d = stepInfo.done;
         ep_ret += 1;
         ep_len += 1;
 

@@ -1,5 +1,4 @@
 /** File contains implementations of basic numpy operations using ndarray */
-import * as typesss from '../utils/types';
 import { Tensor, tensor } from '@tensorflow/tfjs-core';
 import ndarray, { DataType } from 'ndarray';
 import ops from 'ndarray-ops';
@@ -239,7 +238,7 @@ export const toNj = (x: ndarray.NdArray) => {
 };
 
 // this exists because the package's reshape function does not quite work
-export const unsqueeze = (x: NdArray, index: number, copy: boolean = true): NdArray => {
+export const unsqueeze = (x: NdArray, index: number, copy = true): NdArray => {
   if (copy) {
     x = x.clone();
   }

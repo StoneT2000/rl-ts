@@ -1,7 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 import { SymbolicTensor } from '@tensorflow/tfjs';
 import { ActivationIdentifier } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config';
-import nj, { NdArray } from 'numjs';
 import { Box, Discrete, Space } from '../Spaces';
 import { Distribution } from '../utils/Distributions';
 import { Normal } from '../utils/Distributions/normal';
@@ -14,7 +13,7 @@ export const createMLP = (
   activation: ActivationIdentifier,
   name?: string
 ) => {
-  let input = tf.input({ shape: [in_dim] });
+  const input = tf.input({ shape: [in_dim] });
   let layer = tf.layers.dense({ units: hidden_sizes[0], activation }).apply(input);
   for (const size of hidden_sizes.slice(1)) {
     layer = tf.layers.dense({ units: size, activation }).apply(layer);
@@ -46,7 +45,7 @@ export abstract class ActorCritic<Observation extends tf.Tensor> {
 
 export abstract class ActorBase<Observation extends tf.Tensor> extends Actor<Observation> {
   apply(obs: Observation, act: tf.Tensor | null) {
-    let pi = this._distribution(obs);
+    const pi = this._distribution(obs);
     let logp_a = null;
     if (act !== null) {
       logp_a = this._log_prob_from_distribution(pi, act);
@@ -69,9 +68,9 @@ export class MLPGaussianActor extends ActorBase<tf.Tensor> {
     this.mu = tf.variable(tf.tensor(0));
   }
   _distribution(obs: tf.Tensor) {
-    let mu = this.mu_net.apply(obs) as tf.Tensor; // [B, act_dim]
+    const mu = this.mu_net.apply(obs) as tf.Tensor; // [B, act_dim]
     // let mu = tf.zeros([obs.shape[0], this.act_dim]).add(this.mu);
-    let batch_size = mu.shape[0];
+    const batch_size = mu.shape[0];
     // console.log(this.log_std);
     const std = tf.exp(this.log_std).expandDims(0).tile([batch_size, 1]); // from [act_dim] shaped to [B, act_dim]
     return new Normal(mu, std);
@@ -90,9 +89,12 @@ export class MLPCategoricalActor extends ActorBase<tf.Tensor> {
     this.logits_net = createMLP(obs_dim, act_dim, hidden_sizes, activation);
   }
   _distribution(obs: tf.Tensor): Distribution {
+    obs;
     throw new Error('Method not implemented.');
   }
   _log_prob_from_distribution(pi: Distribution, act: tf.Tensor<tf.Rank>): tf.Tensor<tf.Rank> {
+    pi;
+    act;
     throw new Error('Method not implemented.');
   }
 }

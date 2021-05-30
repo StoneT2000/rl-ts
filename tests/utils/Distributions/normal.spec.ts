@@ -1,15 +1,13 @@
 import { expect } from 'chai';
-import * as np from '../../../src/RL/utils/np';
 import * as tf from '@tensorflow/tfjs';
-import nj from 'numjs';
 import { Normal } from '../../../src/RL/utils/Distributions/normal';
 describe('Test normal distribution class', () => {
   it('should sample correctly', () => {
     const mean = tf.range(1, 5, 1, 'float32');
     const std = tf.tensor([1e-1, 1e-1, 1e-1, 1e-1]);
     const normal = new Normal(mean, std);
-    let sample = normal.sample();
-    let data = sample.dataSync();
+    const sample = normal.sample();
+    const data = sample.dataSync();
     for (let i = 0; i < sample.size; i++) {
       expect(data[i]).to.be.lessThan(i + 1 + 1e-1 * 3);
       expect(data[i]).to.be.greaterThan(i + 1 - 1e-1 * 3);

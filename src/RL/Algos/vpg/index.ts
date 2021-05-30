@@ -154,11 +154,11 @@ export class VPG<
         // console.log("ACT",act.shape)
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
-        const loss_pi = logp_a!.mul(adv).mean();
+        const loss_pi = logp_a!.mul(adv).mean().mul(-1);
         let approx_kl = logp_old.sub(logp_a!).mean().arraySync();
         let ent = pi.entropy().mean().arraySync();
         //@ts-ignore
-        console.log(pi.tf_mean.arraySync(), pi.tf_std.arraySync());
+        // console.log("Mean of mean", pi.tf_mean.mean().arraySync());
         // console.log(obs.arraySync());
         // console.log(this.ac.pi.apply())
         return {
@@ -179,18 +179,14 @@ export class VPG<
       const data = await buffer.get();
       const loss_pi_old = compute_loss_pi(data);
       // single gd step for policy.
-      let pi_info_new: {
-        approx_kl: number,
-        ent: number
-      };
-      const pi_grads = pi_optimizer.computeGradients(() => {
-        const {loss_pi, pi_info} = compute_loss_pi(data);
-        pi_info_new = pi_info as typeof pi_info_new;
-        console.log({loss_pi: loss_pi.arraySync()})
-        return loss_pi as tf.Scalar;
-      });
-      // TODO: mpi avg grads here
-      pi_optimizer.applyGradients(pi_grads.grads);
+      // for (let i = 0; i < 4; i++) {
+        const pi_grads = pi_optimizer.computeGradients(() => {
+          const {loss_pi, pi_info} = compute_loss_pi(data);
+          return loss_pi as tf.Scalar;
+        });
+        // TODO: mpi avg grads here
+        pi_optimizer.applyGradients(pi_grads.grads);
+      // }
 
       for (let i = 0; i < configs.train_v_iters; i++) {
         const vf_grads = vf_optimizer.computeGradients(() => {
@@ -202,9 +198,10 @@ export class VPG<
       }
       // TODO
       // log changes
-      console.log("=====")
-      console.log("KL, ENT", pi_info_new!);
-      console.log(loss_pi_old.loss_pi.sub(pi_grads.value).arraySync());
+      console.log("==============")
+      let loss_pi_new = compute_loss_pi(data);
+      const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
+      console.log({info: loss_pi_new.pi_info, delta_pi_loss});
     }
 
     let start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];

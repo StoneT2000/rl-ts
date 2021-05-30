@@ -62,14 +62,18 @@ export abstract class ActorBase<Observation extends tf.Tensor> extends Actor<Obs
 export class MLPGaussianActor extends ActorBase<tf.Tensor> {
   public mu_net: tf.LayersModel;
   public log_std: tf.Variable;
+  public mu: tf.Variable;
   constructor(obs_dim: number, public act_dim: number, hidden_sizes: number[], activation: ActivationIdentifier) {
     super();
     this.log_std = tf.variable(tf.ones([act_dim], 'float32').mul(-0.5), true, 'gaussian-actor-log-std');
     this.mu_net = createMLP(obs_dim, act_dim, hidden_sizes, activation, 'MLP Gaussian Actor');
+    this.mu = tf.variable(tf.tensor(0));
   }
   _distribution(obs: tf.Tensor) {
     let mu = this.mu_net.apply(obs) as tf.Tensor; // [B, act_dim]
+    // let mu = tf.zeros([obs.shape[0], this.act_dim]).add(this.mu);
     let batch_size = mu.shape[0];
+    // console.log(this.log_std);
     const std = tf.exp(this.log_std).expandDims(0).tile([batch_size, 1]); // from [act_dim] shaped to [B, act_dim]
     return new Normal(mu, std);
   }

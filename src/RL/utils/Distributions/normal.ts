@@ -31,16 +31,21 @@ export class Normal extends Distribution {
   }
   logProb(value: tf.Tensor): tf.Tensor {
     // TODO: consider using cwise ourself to implement a nj logarithm function (which for some reason is missing!) or just loop through
-    const _variance = tf.buffer(this.mean.shape);
-    const _logScale = tf.buffer(this.mean.shape);
-    for (let i = 0; i < _variance.size; i++) {
-      let loc = _variance.indexToLoc(i);
-      let std = this.std.get(...loc)
-      _variance.set(std ** 2, ...loc);
-      _logScale.set(Math.log(std), ...loc);
-    }
-    const variance = _variance.toTensor();
-    const logScale = _logScale.toTensor();
+    // const _variance = tf.buffer(this.mean.shape);
+    // const _logScale = tf.buffer(this.mean.shape);
+    // for (let i = 0; i < _variance.size; i++) {
+    //   let loc = _variance.indexToLoc(i);
+    //   let std = this.std.get(...loc)
+    //   _variance.set(std ** 2, ...loc);
+    //   _logScale.set(Math.log(std), ...loc);
+    // }
+    // this.tf_std
+    
+    const variance = this.tf_std.pow(2);
+    const logScale = tf.log(this.tf_std);
+    // const logScale = _logScale.toTensor();
+    // console.log(variance.print())
+    // variance.slice([0, 1], [0, 1]).print();
     let denom = variance.mul(2);
     return value.sub(this.tf_mean).pow(2).neg().div(denom).sub(logScale).sub(logsqrtpi2);
   }

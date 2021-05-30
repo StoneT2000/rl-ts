@@ -21,8 +21,8 @@ export interface CartPoleConfigs {
  */
 export class CartPole extends Environment<ObservationSpace, ActionSpace, Observation, State, Action, Reward> {
   public observationSpace: ObservationSpace;
-  /** 0, 1, 2, 3 represent North, East, South, West directions */
-  public actionSpace = new Discrete(4);
+  /** 0 or 1 represent applying force of -force_mag or force_mag */
+  public actionSpace = new Discrete(2);
 
   public gravity = 9.8;
   public masscart = 1.0;

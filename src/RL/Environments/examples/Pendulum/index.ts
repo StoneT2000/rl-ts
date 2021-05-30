@@ -8,6 +8,7 @@ import { tensorLikeToNdArray } from '../../../utils/np';
 /** Vector with shape (2, ) */
 export type State = NdArray<number>;
 /** Vector with shape (3, ) */
+export type Action = NdArray<number> | number;
 export type Observation = NdArray<number>;
 export type ObservationSpace = Box;
 export type Reward = number;
@@ -24,7 +25,7 @@ export interface PendulumConfigs {
 /**
  * Pendulum Environment
  */
-export class Pendulum extends Environment<ObservationSpace, any, Observation, State, any, Reward> {
+export class Pendulum extends Environment<ObservationSpace, any, Observation, State, Action, Reward> {
   public observationSpace: ObservationSpace;
   public max_speed = 8;
   public max_torque = 2;
@@ -63,7 +64,7 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
     this.timestep = 0;
     return this.getObs();
   }
-  step(action: TensorLike) {
+  step(action: Action) {
     const th = this.state.get(0);
     const thdot = this.state.get(1);
 
@@ -79,15 +80,15 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
         u = nj.array([-this.max_torque]);
       }
     } else {
-      u = nj.clip(u, -this.max_torque, this.max_torque);
+      u = nj.clip(u, -this.max_torque, this.max_torque).slice([0, 1]);
     }
 
-    this.last_u = u.get(0); // for rendering
-    const costs = this.angleNormalize(th) ** 2 + 0.1 * thdot ** 2 + 0.001 * u.get(0) ** 2;
+    this.last_u = u.get(0, 0); // for rendering
+    const costs = this.angleNormalize(th) ** 2 + 0.1 * thdot ** 2 + 0.001 * u.get(0, 0) ** 2;
 
-    let newthdot = thdot + (((-3 * g) / (2 * l)) * Math.sin(th + Math.PI) + (3 / (m * l ** 2)) * u.get(0)) * dt;
+    let newthdot = thdot + (((-3 * g) / (2 * l)) * Math.sin(th + Math.PI) + (3 / (m * l ** 2)) * u.get(0, 0)) * dt;
     const newth = th + newthdot * dt;
-    newthdot = nj.clip(newthdot, -this.max_speed, this.max_speed).get(0);
+    newthdot = nj.clip(newthdot, -this.max_speed, this.max_speed).get(0, 0);
 
     this.state = nj.array([newth, newthdot]);
     this.timestep += 1;

@@ -288,7 +288,7 @@ export class DQN<
         const loss = tf.losses.huberLoss(stateActionValues, expectedStateActionValues) as Scalar;
         return loss as Scalar;
       };
-      const grads = tf.variableGrads(lossFunc);
+      const grads = optimizer.computeGradients(lossFunc);
       for (const key of Object.keys(grads.grads)) {
         grads.grads[key] = grads.grads[key].clipByValue(-1, 1);
       }

@@ -1,5 +1,7 @@
 # Typescript Reinforcement Learning Library 🤖
 
+<img src="./assets/rlts.png" style="zoom:20%;" />
+
 [![npm version](https://badge.fury.io/js/rl-ts.svg)](https://badge.fury.io/js/rl-ts)
 
 This is a RL gym and library built with **typescript** on top of [TensorFlow.js](https://www.tensorflow.org/js), enabling faster bug-free development, powerful web visuals, and a gateway to developing and comparing reinforcement learning algorithms on the web and / or with node.js in javascript or typescript.

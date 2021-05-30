@@ -8,6 +8,7 @@ This is a RL gym and library built with **typescript** on top of tensorflow, ena
 
 **Table of Contents**
 - [Features](#Features)
+- [Getting Started](#Getting Started)
 
 Install with
 

@@ -28,10 +28,8 @@ export interface VPGTrainConfigs {
     loss: number | null;
   }): any;
   epochCallback(epochDate: {
-    step: number;
-    episodeDurations: number[];
-    episodeRewards: number[];
-    episodeIteration: number;
+    epoch: number;
+    avg_rep_ret: number;
   }): any;
   pi_optimizer: tf.Optimizer;
   vf_optimizer: tf.Optimizer;
@@ -88,7 +86,6 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     this.configs = deepMerge(this.configs, configs);
 
     this.env = makeEnv();
-    if (!this.env.actionSpace.meta.discrete) throw new Error('Action space is not discrete');
     this.obsToTensor = this.configs.obsToTensor;
     this.actionToTensor = this.configs.actionToTensor;
   }
@@ -100,7 +97,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
    * @returns action
    */
   public act(observation: Observation): Action {
-    return np.tensorLikeToNdArray(this.ac.act(np.tensorLikeToTensor(observation)));
+    return np.tensorLikeToNdArray(this.ac.act(this.obsToTensor(observation)));
   }
 
   public async train(trainConfigs: Partial<VPGTrainConfigs>) {
@@ -154,6 +151,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean().mul(-1);
+        // console.log(adv?.arraySync())
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync();
         const ent = pi.entropy().mean().arraySync();
         return {
@@ -215,7 +213,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
 
         const r = stepInfo.reward;
         const d = stepInfo.done;
-        ep_ret += 1;
+        ep_ret += r;
         ep_len += 1;
 
         // TODO, log vvals
@@ -262,6 +260,11 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       console.log({
         avg_rep_ret,
         epoch,
+      });
+
+      await configs.epochCallback({
+        epoch,
+        avg_rep_ret,
       });
     }
   }

@@ -66,7 +66,7 @@ export class VPGBuffer {
   }
   public store(obs: NdArray, act: NdArray, rew: number, val: number, logp: number) {
     if (this.ptr >= this.maxSize) throw new Error('Experience Buffer has no room');
-    let slice = [this.ptr, this.ptr + 1]
+    let slice = [this.ptr, this.ptr + 1];
     this.obsBuf.slice(slice).assign(obs, false);
     this.actBuf.slice(slice).assign(act, false);
     this.rewBuf.set(this.ptr, rew);

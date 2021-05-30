@@ -244,7 +244,7 @@ export const unsqueeze = (x: NdArray, index: number, copy: boolean = true): NdAr
     x = x.clone();
   }
   x.selection.shape = [...x.shape.slice(0, index), 1, ...x.shape.slice(index)];
-  
+
   // compute the new stride
   let shapemult = 1;
   x.selection.stride = new Array(x.shape.length);
@@ -253,5 +253,4 @@ export const unsqueeze = (x: NdArray, index: number, copy: boolean = true): NdAr
     x.selection.stride[i] = Math.floor(shapemult / x.shape[i]);
   }
   return x;
-}
-
+};

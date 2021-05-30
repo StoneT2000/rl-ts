@@ -6,7 +6,6 @@ import { Box, Discrete, Space } from '../Spaces';
 import { Distribution } from '../utils/Distributions';
 import { Normal } from '../utils/Distributions/normal';
 
-
 /** Create a MLP model */
 export const createMLP = (
   in_dim: number,
@@ -117,7 +116,7 @@ export class MLPActorCritic extends ActorCritic<tf.Tensor> {
     public observationSpace: Space<any>,
     public actionSpace: Space<any>,
     hidden_sizes: number[],
-    activation: ActivationIdentifier = "tanh"
+    activation: ActivationIdentifier = 'tanh'
   ) {
     super();
     const obs_dim = observationSpace.shape[0];

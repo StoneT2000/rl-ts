@@ -6,7 +6,7 @@ import ops from 'ndarray-ops';
 import * as tf from '@tensorflow/tfjs-node';
 import nj from 'numjs';
 
-export class Box extends Space<TensorLike> {
+export class Box extends Space<nj.NdArray<number>> {
   public low: null | NdArray<number>;
   public high: null | NdArray<number>;
 
@@ -115,8 +115,7 @@ export class Box extends Space<TensorLike> {
     }
     return np.toNj(sample);
   }
-  contains(x: TensorLike): boolean {
-    x = np.tensorLikeToNdArray(x);
+  contains(x: NdArray): boolean {
     if (!np.arrayEqual(x.shape, this.shape)) return false;
     return true;
   }

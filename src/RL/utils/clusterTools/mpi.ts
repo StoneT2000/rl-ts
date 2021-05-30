@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs-node';
-import { OPS } from "./ops";
+import { OPS } from './ops';
 import cluster from 'cluster';
-import { Serializable } from "node:child_process";
+import { Serializable } from 'node:child_process';
 import os from 'os';
 
 export enum MessageType {
@@ -9,8 +9,8 @@ export enum MessageType {
   SEND,
 }
 export interface Message {
-  type: MessageType,
-  data?: Serializable
+  type: MessageType;
+  data?: Serializable;
 }
 
 // let receivePromise: Promise<Message>;
@@ -20,26 +20,28 @@ let _procCount = 1;
 let _id = 0;
 export const setupMPI = async () => {
   // receivePromise = new Promise((resolve, reject) => {
-    // process.once('message', (m) => {
-    //   resolve(m);
-    // });
+  // process.once('message', (m) => {
+  //   resolve(m);
   // });
-}
+  // });
+};
 
 export const fork = async (forkCount: number) => {
   const listeningPromises: Array<Promise<cluster.Worker>> = [];
   if (cluster.isMaster) {
     for (let i = 0; i < forkCount; i++) {
       const worker = cluster.fork();
-      listeningPromises.push(new Promise((res, rej) => {
-        worker.on('online', async () => {
-          await send({type: MessageType.INIT, data: [worker.id, forkCount + 1]}, worker);
-          res(worker);
-        });
-        worker.on('error', (err) => {
-          rej(err);
+      listeningPromises.push(
+        new Promise((res, rej) => {
+          worker.on('online', async () => {
+            await send({ type: MessageType.INIT, data: [worker.id, forkCount + 1] }, worker);
+            res(worker);
+          });
+          worker.on('error', (err) => {
+            rej(err);
+          });
         })
-      }));
+      );
     }
     workers = await Promise.all(listeningPromises);
     _procCount = forkCount + 1;
@@ -50,7 +52,7 @@ export const fork = async (forkCount: number) => {
     _id = data[0];
     _procCount = data[1];
   }
-}
+};
 export const send = async (msg: Message, worker: cluster.Worker | NodeJS.Process): Promise<void> => {
   return new Promise((resolve, reject) => {
     worker.send!(msg, undefined, (err) => {
@@ -58,14 +60,14 @@ export const send = async (msg: Message, worker: cluster.Worker | NodeJS.Process
       resolve();
     });
   });
-}
+};
 export const sendall = async (msg: Message) => {
   let results: Promise<void>[] = [];
   workers.forEach((worker) => {
     results.push(send(msg, worker));
   });
   return Promise.all(results);
-}
+};
 
 export const receiveFromWorker = async (worker: cluster.Worker): Promise<Message> => {
   return new Promise((resolve, reject) => {
@@ -81,7 +83,7 @@ export const receiveAll = async () => {
     results.push(receiveFromWorker(worker));
   });
   return Promise.all(results);
-}
+};
 
 export const receive = async (): Promise<Message> => {
   return new Promise((resolve, reject) => {
@@ -96,7 +98,7 @@ export const disconnect = async () => {
   workers.forEach((worker) => {
     worker.disconnect();
   });
-}
+};
 
 export const tensorToSerializable = (x: tf.Tensor): Serializable => {
   return x.arraySync();
@@ -104,7 +106,7 @@ export const tensorToSerializable = (x: tf.Tensor): Serializable => {
 
 export const numProcs = () => {
   return _procCount;
-}
+};
 export const id = () => {
   return _id;
-}
+};

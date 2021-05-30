@@ -68,8 +68,7 @@ describe('Test numpy (in ts) utils', () => {
     expect(np.arrayEqual(a.selection.data as number[], [2, 3, 4, 5])).to.equal(true);
   });
   it('should unsqueeze correctly', () => {
-        
-    let x = nj.zeros([3,3,3])
+    let x = nj.zeros([3, 3, 3]);
     let ref = x.reshape(1, ...x.shape);
     let a = np.unsqueeze(x, 0);
     expect(np.arrayEqual(a.selection.stride, ref.selection.stride)).to.equal(true);

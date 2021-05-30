@@ -19,16 +19,14 @@ export interface VPGConfigs<Observation, Action> {
   act?: (obs: Observation) => Action;
 }
 export interface VPGTrainConfigs {
-  stepCallback(
-    stepData: {
-      step: number;
-      episodeDurations: number[];
-      episodeRewards: number[];
-      episodeIteration: number;
-      info: any;
-      loss: number | null;
-    }
-  ): any;
+  stepCallback(stepData: {
+    step: number;
+    episodeDurations: number[];
+    episodeRewards: number[];
+    episodeIteration: number;
+    info: any;
+    loss: number | null;
+  }): any;
   epochCallback(epochDate: {
     step: number;
     episodeDurations: number[];
@@ -47,17 +45,18 @@ export interface VPGTrainConfigs {
   gamma: number;
   lam: number;
   train_v_iters: number;
+  train_pi_iters: number;
   steps_per_epoch: number;
   /** maximum length of each trajectory collected */
   max_ep_len: number;
   seed: number;
 }
-type Action = TensorLike;
-type Observation = TensorLike;
-export class VPG<
-  ObservationSpace extends Space<Observation>,
-  ActionSpace extends Space<Action>,
-> extends Agent<Observation, Action> {
+type Action = NdArray | number;
+type Observation = NdArray;
+export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+  Observation,
+  Action
+> {
   public configs: VPGConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
       // eslint-disable-next-line
@@ -69,7 +68,7 @@ export class VPG<
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if action space is dict. if action space is dict, user needs to override this.
       return action;
-    }
+    },
   };
 
   public env: Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>;
@@ -117,6 +116,7 @@ export class VPG<
       gamma: 0.99,
       lam: 0.97,
       seed: 0,
+      train_pi_iters: 1,
       stepCallback: () => {},
       epochCallback: () => {},
     };
@@ -127,8 +127,8 @@ export class VPG<
     // TODO do some seeding things
     configs.seed += 99999 * ct.id();
     random.seed(configs.seed);
-    // seed tensorflow
-    
+    // TODO: seed tensorflow if possible
+
     let env = this.env;
     let obs_dim = env.observationSpace.shape;
     let act_dim = env.actionSpace.shape;
@@ -140,7 +140,7 @@ export class VPG<
       lam: configs.lam,
       actDim: act_dim,
       obsDim: obs_dim,
-      size: local_steps_per_epoch
+      size: local_steps_per_epoch,
     });
 
     if (configs.verbose) {
@@ -148,61 +148,55 @@ export class VPG<
     }
 
     const compute_loss_pi = (data: VPGBufferComputations) => {
-      const {obs, act, adv} = data;
+      const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
-        // console.log("ACT",act.shape)
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean().mul(-1);
         let approx_kl = logp_old.sub(logp_a!).mean().arraySync();
         let ent = pi.entropy().mean().arraySync();
-        //@ts-ignore
-        // console.log("Mean of mean", pi.tf_mean.mean().arraySync());
-        // console.log(obs.arraySync());
-        // console.log(this.ac.pi.apply())
         return {
           loss_pi,
           pi_info: {
             approx_kl,
-            ent
-          }
-        }
+            ent,
+          },
+        };
       });
-    }
+    };
     const compute_loss_vf = (data: VPGBufferComputations) => {
-      const {obs, ret} = data;
-      return (this.ac.v.apply(obs).sub(ret)).pow(2).mean();
-    }
+      const { obs, ret } = data;
+      return this.ac.v.apply(obs).sub(ret).pow(2).mean();
+    };
 
     const update = async () => {
       const data = await buffer.get();
       const loss_pi_old = compute_loss_pi(data);
-      // single gd step for policy.
-      // for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
-          const {loss_pi, pi_info} = compute_loss_pi(data);
+          const { loss_pi, pi_info } = compute_loss_pi(data);
           return loss_pi as tf.Scalar;
         });
         // TODO: mpi avg grads here
         pi_optimizer.applyGradients(pi_grads.grads);
-      // }
+      }
 
       for (let i = 0; i < configs.train_v_iters; i++) {
         const vf_grads = vf_optimizer.computeGradients(() => {
           const loss_v = compute_loss_vf(data);
-          return loss_v as tf.Scalar; 
+          return loss_v as tf.Scalar;
         });
         vf_optimizer.applyGradients(vf_grads.grads);
         // TODO: mpi avg grads here
       }
       // TODO
       // log changes
-      console.log("==============")
+      console.log('==============');
       let loss_pi_new = compute_loss_pi(data);
       const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
-      console.log({info: loss_pi_new.pi_info, delta_pi_loss});
-    }
+      console.log({ info: loss_pi_new.pi_info, delta_pi_loss });
+    };
 
     let start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
     let o = env.reset();
@@ -217,14 +211,20 @@ export class VPG<
         let action = np.tensorLikeToNdArray(this.actionToTensor(a));
         let stepInfo = env.step(action);
         let next_o = stepInfo.observation;
-        //@ts-ignore
+
         let r = stepInfo.reward;
         let d = stepInfo.done;
         ep_ret += 1;
         ep_len += 1;
 
         // TODO, log vvals
-        buffer.store(np.unsqueeze(np.tensorLikeToNdArray(o), 0), np.tensorLikeToNdArray(a), r, np.tensorLikeToNdArray(v).get(0, 0), np.tensorLikeToNdArray(logp_a!).get(0, 0));
+        buffer.store(
+          np.unsqueeze(np.tensorLikeToNdArray(o), 0),
+          np.tensorLikeToNdArray(a),
+          r,
+          np.tensorLikeToNdArray(v).get(0, 0),
+          np.tensorLikeToNdArray(logp_a!).get(0, 0)
+        );
 
         o = next_o;
 
@@ -237,7 +237,7 @@ export class VPG<
           }
           let v = 0;
           if (timeout || epoch_ended) {
-            v = (this.ac.step(this.obsToTensor(o)).v.arraySync() as number[][])[0][0]
+            v = (this.ac.step(this.obsToTensor(o)).v.arraySync() as number[][])[0][0];
           }
           buffer.finishPath(v);
           if (terminal) {
@@ -247,7 +247,8 @@ export class VPG<
           }
           o = env.reset();
           // console.log({terminal, t, epoch_ended, epoch, ep_len, ep_ret})
-          ep_ret = 0; ep_len = 0;
+          ep_ret = 0;
+          ep_len = 0;
         }
       }
       // TODO save model
@@ -259,7 +260,8 @@ export class VPG<
       avg_rep_ret /= finished_trajectories;
       console.log({
         avg_rep_ret,
-      })
+        epoch,
+      });
     }
   }
 }

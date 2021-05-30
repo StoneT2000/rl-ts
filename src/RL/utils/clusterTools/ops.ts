@@ -1,4 +1,4 @@
 export enum OPS {
   SUM,
-  GATHER
+  GATHER,
 }

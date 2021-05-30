@@ -39,7 +39,7 @@ It is also recommended to install [numjs](https://github.com/nicolaspanel/numjs)
 npm i github:nicolaspanel/numjs
 ```
 
-as many computations and variables are stored as NdArrays (provided by the numjs package).
+as many computations are performed with NdArrays (provided by the numjs package).
 
 ## Getting Started
 
@@ -109,11 +109,11 @@ Each of the links above take you to the part of the repo with that algorithm and
 
 ### Data Types
 
-Usage of the library has effectively 2 places of data. Data stored by the algorithms and models. Lastly, data stored in environments.
+Usage of the library has effectively 2 places of data. Data stored in environments and data stored by the algorithms and models.
 
-Environments provided by this library strictly use plain JS numbers and NdArrays from the [numjs](https://github.com/nicolaspanel/numjs) package. You can treat these like [numpy](https://numpy.org/). So actions sent to environments and observed observations are always NdArrays or numbers. This is done for consistency and also for ease of use as things can get quite complicated when performing many computations on just plain JS arrays. Moreover, this keeps the environments component of this library "ML library agnostic", meaning you don't have to use TensorFlow based models to leverage the environments.
+Environments provided by this library strictly use plain JS numbers and NdArrays from the [numjs](https://github.com/nicolaspanel/numjs) package. You can treat these like [numpy](https://numpy.org/). Thus, actions sent to environments and observed observations are always NdArrays or numbers. This is done for consistency and also for ease of use as things can get quite complicated when performing many computations on just plain JS arrays. Moreover, this keeps the environments component of this library "ML library agnostic", meaning you don't have to use TensorFlow based models to leverage the environments.
 
-As this library is built on top of [TensorFlow.js](https://www.tensorflow.org/js) (tfjs), all algorithms and models will try to always use tfjs tensors for anything. The only time they aren't used are for when tfjs doesn't have some feature or interacting with environments. As environments accept and return NdArrays and numbers strictly, baseline algorithms and models will convert tensors to NdArrays whenever possible.
+As this library is built on top of [TensorFlow.js](https://www.tensorflow.org/js) (tfjs), all algorithms and models will try to always use TensorFlow tensors for anything. The only time they aren't used are for when tfjs doesn't have some feature or interacting with environments. As environments accept and return NdArrays and numbers strictly, baseline algorithms and models will convert tensors to NdArrays whenever possible.
 
 Since there will be a lot of work done with NdArrays, you should install the numjs package via 
 ```

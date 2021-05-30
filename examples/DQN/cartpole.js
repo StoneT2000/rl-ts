@@ -49,15 +49,15 @@ const main = async () => {
       const { reward, observation, done, info } = dqn.env.step(action);
       state = observation;
       rewards += reward;
-      if (episodeIteration > 80) {
-        // after 80 episodes, start rendering the evaluation to a web viewer to visualize the progress.
+      if (episodeIteration > 60) {
+        // after 60 episodes start rendering the evaluation to a web viewer to visualize the progress.
         await dqn.env.render('web', { fps: 60, episode: episodeIteration, rewards });
       }
       
       if (done) break;
     }
     console.log(
-      `Episode ${episodeIteration} - Train Rewards: ${episodeRewards[episodeRewards.length - 1]} - Rewards: ${rewards}`
+      `Episode ${episodeIteration} - Train Rewards: ${episodeRewards[episodeRewards.length - 1]} - Eval Rewards: ${rewards}`
     );
   };
 

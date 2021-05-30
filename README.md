@@ -44,7 +44,7 @@ as many computations are performed with NdArrays (provided by the numjs package)
 
 ## Getting Started
 
-This library contains both integrated environments and various algorithms.
+This library contains both integrated environments and various algorithms. Feel free to dive head first into code and running of algorithms if you like. It is recommended to get a basic understanding of RL and https://spinningup.openai.com/en/latest/spinningup/rl_intro.html is a great intro to RL.
 
 ### Environments
 

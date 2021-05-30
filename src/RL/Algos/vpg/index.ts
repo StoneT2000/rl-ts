@@ -97,7 +97,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
    * @returns action
    */
   public act(observation: Observation): Action {
-    return np.tensorLikeToNdArray(this.ac.act(this.obsToTensor(observation)));
+    return np.tensorLikeToNdArray(this.actionToTensor((this.ac.act(this.obsToTensor(observation)))));
   }
 
   public async train(trainConfigs: Partial<VPGTrainConfigs>) {

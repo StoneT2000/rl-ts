@@ -8,13 +8,14 @@ import { DeepPartial } from '../../utils/types';
 import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
 import { Scalar } from '@tensorflow/tfjs';
+import { NdArray } from 'numjs';
 
 export interface DQNConfigs<Observation, Action> {
   replayBufferCapacity: number;
   policyNet?: tf.LayersModel;
   targetNet?: tf.LayersModel;
-  /** Converts observations to tensors that can be used in optimization function */
-  obsToTensor: (state: Observation) => tf.Tensor;
+  /** Converts observations to tensors with a batch size dimension that can be used in optimization function */
+  obsToTensor: (obs: Observation) => tf.Tensor;
   /** Converts actions to tensors that can be used in optimization function */
   actionToTensor: (action: Action) => tf.Tensor;
   /** Optional act function to replace the default act */
@@ -54,12 +55,11 @@ export interface DQNTrainConfigs<Observation, Action> {
   verbose: boolean;
   batchSize: number;
 }
-
+type Observation = NdArray;
+type Action = NdArray;
 export class DQN<
   ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>,
-  Observation,
-  Action
 > extends Agent<Observation, Action> {
   public configs: DQNConfigs<Observation, Action> = {
     replayBufferCapacity: 1000,
@@ -67,6 +67,10 @@ export class DQN<
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
       const tensor = np.tensorLikeToTensor(obs);
+      if (tensor.shape[0] !== this.env.observationSpace.shape[0]) {
+        // if there is a mismatch in first dimension, we assume this is the batch size
+        return tensor;
+      }
       return tensor.reshape([1, ...tensor.shape]);
     },
     actionToTensor: (action: Action) => {
@@ -88,7 +92,7 @@ export class DQN<
   constructor(
     /** function that creates environment for interaction */
     public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
-    /** configs for the DQN model */
+    /** configs for the DQN algorithm */
     configs: DeepPartial<DQNConfigs<Observation, Action>>
   ) {
     super();
@@ -152,6 +156,7 @@ export class DQN<
       const eps = this.getEpsilon(t, configs.epsDecay, configs.epsStart, configs.epsEnd);
       const action = this.actEps(state, eps);
 
+      // Step through environment
       const stepInfo = this.env.step(action);
 
       // store next state and push to replay buffer
@@ -160,7 +165,7 @@ export class DQN<
       const reward = stepInfo.reward;
       this.replayBuffer.push({ state, nextState, reward, action, done });
 
-      // Move to next state
+      // Move to next state and store rewards and durations
       state = nextState;
       episodeDurations[episodeDurations.length - 1] += 1;
       episodeRewards[episodeRewards.length - 1] += reward;
@@ -176,6 +181,7 @@ export class DQN<
       }
       if (configs.savePath && configs.saveLocation) {
         if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
+          // save policy and target net models. 
           const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
           const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
           if (configs.verbose) {
@@ -186,7 +192,6 @@ export class DQN<
         }
       }
 
-      // TODO: allow user to specify async step callbacks
       await configs.stepCallback({
         state,
         nextState,
@@ -214,6 +219,7 @@ export class DQN<
           episodeIteration,
         });
 
+        // setup next episode
         episodeDurations.push(0);
         episodeRewards.push(0);
         episodeIteration = episodeIteration + 1;
@@ -222,6 +228,12 @@ export class DQN<
     }
   }
 
+  /**
+   * Select action with eps probability of sampling from action space
+   * @param obs - observation
+   * @param eps - probability of selecting random action
+   * @returns 
+   */
   private actEps(obs: Observation, eps: number): Action {
     if (random.randomVal() > eps) {
       if (this.configs.act) return this.configs.act(obs);
@@ -229,10 +241,12 @@ export class DQN<
       const action = np.fromTensorSync(pred.argMax(1)).get(0) as $TSFIXME;
       return action;
     } else {
+      // TODO: allow user to provide their own sampling algorithm
       return this.env.actionSpace.sample();
     }
   }
 
+  // TODO: allow user to use other schedules or define their own
   /** vary epsilon by exponential schedule */
   private getEpsilon(timeStep: number, epsDecay: number, epsStart: number, epsEnd: number) {
     const eps_threshold = epsEnd + (epsStart - epsEnd) * Math.exp((-1 * timeStep) / epsDecay);
@@ -254,8 +268,6 @@ export class DQN<
 
     const loss = tf.tidy(() => {
       const optimizer = configs.optimizer;
-
-      // TODO: consider having user provide toTensor functions that handle batches?
       const _stateBatch: any[] = [];
       const _actionBatch: (tf.Tensor<tf.Rank> | tf.TensorLike)[] = [];
       const _nextStateBatch: any[] = [];
@@ -276,10 +288,9 @@ export class DQN<
 
       this.targetNet.trainable = false;
       const lossFunc = () => {
-        const stateValues = this.policyNet.apply(stateBatch) as tf.Tensor; // [B, 2]
-        // TODO: remove hardcoded shape here
+        const stateValues = this.policyNet.apply(stateBatch) as tf.Tensor; // [B, actdim]
 
-        const stateActionValues = stateValues.mul(tf.oneHot(actionBatch, stateValues.shape[1]!)).sum(-1);
+        const stateActionValues = stateValues.mul(tf.oneHot(actionBatch, stateValues.shape[1]!)).sum(-1); // this zeros out state values associated to unselected actions
         const nnn = this.targetNet.apply(nextStateBatch) as tf.Tensor;
         const nextStateValues = nnn.max(1);
         const doneMask = tf.scalar(1).sub(tf.tensor1d(_doneBatch).asType('float32')); // mask with 1s where there exists a next state and 0s where it is finished and no next state

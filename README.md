@@ -1,6 +1,6 @@
 # Typescript Reinforcement Learning Library 🤖
 
-<img src="./assets/rlts.png" style="zoom:20%;" />
+<!-- <img src="./assets/rlts.png" style="zoom:20%;" /> -->
 
 [![npm version](https://badge.fury.io/js/rl-ts.svg)](https://badge.fury.io/js/rl-ts)
 

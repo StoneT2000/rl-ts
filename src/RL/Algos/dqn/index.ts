@@ -56,7 +56,7 @@ export interface DQNTrainConfigs<Observation, Action> {
   batchSize: number;
 }
 type Observation = NdArray;
-type Action = NdArray;
+type Action = NdArray | number;
 export class DQN<
   ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>,

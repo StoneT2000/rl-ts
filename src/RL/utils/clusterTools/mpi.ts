@@ -16,7 +16,7 @@ export interface Message {
 // let receivePromise: Promise<Message>;
 const numCPUs = os.cpus().length;
 let workers: cluster.Worker[] = [];
-let _procCount = 0;
+let _procCount = 1;
 let _id = 0;
 export const setupMPI = async () => {
   // receivePromise = new Promise((resolve, reject) => {

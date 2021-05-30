@@ -10,4 +10,5 @@ export abstract class Distribution {
   }
   abstract sample(): tf.Tensor;
   abstract logProb(value: tf.Tensor): tf.Tensor;
+  abstract entropy(): tf.Tensor
 }

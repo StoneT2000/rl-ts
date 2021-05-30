@@ -32,7 +32,6 @@ export const random = (shape: number[], low = 0, high = 1) => {
   }
   return vals;
 };
-
-export const seed = (seed: number) => {
+export const seed = (seed: number, seedTF: boolean = false) => {
   rng = seedrandom(`${seed}`);
 };

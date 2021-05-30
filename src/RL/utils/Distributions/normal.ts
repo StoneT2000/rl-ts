@@ -44,4 +44,14 @@ export class Normal extends Distribution {
     let denom = variance.mul(2);
     return value.sub(this.tf_mean).pow(2).neg().div(denom).sub(logScale).sub(logsqrtpi2);
   }
+  entropy() {
+    const _logScale = tf.buffer(this.mean.shape);
+    for (let i = 0; i < _logScale.size; i++) {
+      let loc = _logScale.indexToLoc(i);
+      let std = this.std.get(...loc)
+      _logScale.set(Math.log(std), ...loc);
+    }
+    const logScale = _logScale.toTensor();
+    return logScale.add(0.5 + 0.5 * Math.log(2 * Math.PI));
+  }
 }

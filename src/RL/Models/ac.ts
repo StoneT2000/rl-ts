@@ -2,9 +2,9 @@ import * as tf from '@tensorflow/tfjs';
 import { SymbolicTensor } from '@tensorflow/tfjs';
 import { ActivationIdentifier } from '@tensorflow/tfjs-layers/dist/keras_format/activation_config';
 import nj, { NdArray } from 'numjs';
-import { Box, Discrete, Space } from '../../Spaces';
-import { Distribution } from '../../utils/Distributions';
-import { Normal } from '../../utils/Distributions/normal';
+import { Box, Discrete, Space } from '../Spaces';
+import { Distribution } from '../utils/Distributions';
+import { Normal } from '../utils/Distributions/normal';
 
 
 /** Create a MLP model */
@@ -46,7 +46,7 @@ export abstract class ActorCritic<Observation extends tf.Tensor> {
 }
 
 export abstract class ActorBase<Observation extends tf.Tensor> extends Actor<Observation> {
-  apply(obs: Observation, act: tf.Tensor | null = null) {
+  apply(obs: Observation, act: tf.Tensor | null) {
     let pi = this._distribution(obs);
     let logp_a = null;
     if (act !== null) {
@@ -59,7 +59,7 @@ export abstract class ActorBase<Observation extends tf.Tensor> extends Actor<Obs
   }
 }
 
-export class MLPGaussianActor<Observation extends tf.Tensor> extends ActorBase<Observation> {
+export class MLPGaussianActor extends ActorBase<tf.Tensor> {
   public mu_net: tf.LayersModel;
   public log_std: tf.Variable;
   constructor(obs_dim: number, public act_dim: number, hidden_sizes: number[], activation: ActivationIdentifier) {
@@ -67,9 +67,10 @@ export class MLPGaussianActor<Observation extends tf.Tensor> extends ActorBase<O
     this.log_std = tf.variable(tf.ones([act_dim], 'float32').mul(-0.5), true, 'gaussian-actor-log-std');
     this.mu_net = createMLP(obs_dim, act_dim, hidden_sizes, activation, 'MLP Gaussian Actor');
   }
-  _distribution(obs: Observation) {
-    const mu = this.mu_net.apply(obs) as tf.Tensor;
-    const std = tf.exp(this.log_std);
+  _distribution(obs: tf.Tensor) {
+    let mu = this.mu_net.apply(obs) as tf.Tensor; // [B, act_dim]
+    let batch_size = mu.shape[0];
+    const std = tf.exp(this.log_std).expandDims(0).tile([batch_size, 1]); // from [act_dim] shaped to [B, act_dim]
     return new Normal(mu, std);
   }
   _log_prob_from_distribution(pi: Normal, act: tf.Tensor): tf.Tensor {
@@ -79,13 +80,13 @@ export class MLPGaussianActor<Observation extends tf.Tensor> extends ActorBase<O
 }
 
 // TODO:
-export class MLPCategoricalActor<Observation extends tf.Tensor> extends ActorBase<Observation> {
+export class MLPCategoricalActor extends ActorBase<tf.Tensor> {
   public logits_net: tf.LayersModel;
   constructor(obs_dim: number, act_dim: number, hidden_sizes: number[], activation: ActivationIdentifier) {
     super();
     this.logits_net = createMLP(obs_dim, act_dim, hidden_sizes, activation);
   }
-  _distribution(obs: Observation): Distribution {
+  _distribution(obs: tf.Tensor): Distribution {
     throw new Error('Method not implemented.');
   }
   _log_prob_from_distribution(pi: Distribution, act: tf.Tensor<tf.Rank>): tf.Tensor<tf.Rank> {
@@ -93,26 +94,26 @@ export class MLPCategoricalActor<Observation extends tf.Tensor> extends ActorBas
   }
 }
 
-export class MLPCritic<Observation extends tf.Tensor> extends Critic<Observation> {
+export class MLPCritic extends Critic<tf.Tensor> {
   public v_net: tf.LayersModel;
   constructor(obs_dim: number, hidden_sizes: number[], activation: ActivationIdentifier) {
     super();
     this.v_net = createMLP(obs_dim, 1, hidden_sizes, activation, 'MLP Critic');
   }
-  apply(obs: Observation) {
+  apply(obs: tf.Tensor) {
     // TODO check need squeeze?
     return this.v_net.apply(obs) as tf.Tensor;
   }
 }
 
-export class MLPActorCritic<Observation extends tf.Tensor> extends ActorCritic<Observation> {
-  public pi: Actor<Observation>;
-  public v: Critic<Observation>;
+export class MLPActorCritic extends ActorCritic<tf.Tensor> {
+  public pi: Actor<tf.Tensor>;
+  public v: Critic<tf.Tensor>;
   constructor(
     public observationSpace: Space<any>,
     public actionSpace: Space<any>,
     hidden_sizes: number[],
-    activation: ActivationIdentifier
+    activation: ActivationIdentifier = "tanh"
   ) {
     super();
     const obs_dim = observationSpace.shape[0];
@@ -126,7 +127,7 @@ export class MLPActorCritic<Observation extends tf.Tensor> extends ActorCritic<O
     }
     this.v = new MLPCritic(obs_dim, hidden_sizes, activation);
   }
-  step(obs: Observation) {
+  step(obs: tf.Tensor) {
     const pi = this.pi._distribution(obs);
     const a = pi.sample();
     const logp_a = this.pi._log_prob_from_distribution(pi, a);
@@ -137,7 +138,7 @@ export class MLPActorCritic<Observation extends tf.Tensor> extends ActorCritic<O
       v,
     };
   }
-  act(obs: Observation) {
+  act(obs: tf.Tensor) {
     return this.step(obs).a;
   }
 }

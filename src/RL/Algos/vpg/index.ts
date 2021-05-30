@@ -8,12 +8,13 @@ import { DeepPartial } from '../../utils/types';
 import { deepMerge } from '../../utils/deep';
 import * as np from '../../utils/np';
 import * as ct from '../../utils/clusterTools';
-import { ActorCritic } from '../utils/models';
-export interface VPGConfigs<Observation extends tf.Tensor, Action> {
-  /** Converts observations to tensors that can be used in optimization function */
+import nj, { NdArray } from 'numjs';
+import { ActorCritic } from '../../Models/ac';
+export interface VPGConfigs<Observation, Action> {
+  /** Converts observations to tensors */
   obsToTensor: (state: Observation) => tf.Tensor;
-  /** Converts actions to tensors that can be used in optimization function */
-  actionToTensor: (action: Action) => tf.Tensor;
+  /** Converts actor critic output tensor to tensor that works with environment. Necessary if in discrete action space! */
+  actionToTensor: (action: tf.Tensor) => TensorLike;
   /** Optional act function to replace the default act */
   act?: (obs: Observation) => Action;
 }
@@ -49,12 +50,13 @@ export interface VPGTrainConfigs {
   steps_per_epoch: number;
   /** maximum length of each trajectory collected */
   max_ep_len: number;
+  seed: number;
 }
-type Action = tf.Tensor;
+type Action = TensorLike;
+type Observation = TensorLike;
 export class VPG<
   ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>,
-  Observation extends tf.Tensor
 > extends Agent<Observation, Action> {
   public configs: VPGConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
@@ -63,25 +65,25 @@ export class VPG<
       const tensor = np.tensorLikeToTensor(obs);
       return tensor.reshape([1, ...tensor.shape]);
     },
-    actionToTensor: (action: Action) => {
+    actionToTensor: (action: tf.Tensor) => {
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if action space is dict. if action space is dict, user needs to override this.
-      return np.tensorLikeToTensor(action);
+      return action;
     }
   };
 
   public env: Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>;
 
   private obsToTensor: (obs: Observation) => tf.Tensor;
-  private actionToTensor: (action: Action) => tf.Tensor;
+  private actionToTensor: (action: tf.Tensor) => TensorLike;
 
   constructor(
     /** function that creates environment for interaction */
     public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
     /** The actor crtic model */
-    public ac: ActorCritic<Observation>,
+    public ac: ActorCritic<tf.Tensor>,
     /** configs for the VPG model */
-    configs: DeepPartial<VPGConfigs<Observation, Action>>
+    configs: DeepPartial<VPGConfigs<Observation, Action>> = {}
   ) {
     super();
     this.configs = deepMerge(this.configs, configs);
@@ -99,7 +101,7 @@ export class VPG<
    * @returns action
    */
   public act(observation: Observation): Action {
-    return this.ac.act(observation) as tf.Tensor;
+    return np.tensorLikeToNdArray(this.ac.act(np.tensorLikeToTensor(observation)));
   }
 
   public async train(trainConfigs: Partial<VPGTrainConfigs>) {
@@ -114,13 +116,19 @@ export class VPG<
       train_v_iters: 80,
       gamma: 0.99,
       lam: 0.97,
+      seed: 0,
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
 
-    // TODO do some seeding things
+    const { vf_optimizer, pi_optimizer } = configs;
 
+    // TODO do some seeding things
+    configs.seed += 99999 * ct.id();
+    random.seed(configs.seed);
+    // seed tensorflow
+    
     let env = this.env;
     let obs_dim = env.observationSpace.shape;
     let act_dim = env.actionSpace.shape;
@@ -142,15 +150,55 @@ export class VPG<
     const compute_loss_pi = (data: VPGBufferComputations) => {
       const {obs, act, adv} = data;
       const logp_old = data.logp;
-      // TODO:
+      return tf.tidy(() => {
+        console.log(obs.shape)
+        const { pi, logp_a } = this.ac.pi.apply(obs, act);
+        const loss_pi = logp_a!.mul(adv).mean();
+
+        let approx_kl = logp_old.sub(logp_a!).mean().arraySync();
+        let ent = pi.entropy().mean().arraySync();
+        return {
+          loss_pi,
+          pi_info: {
+            approx_kl,
+            ent
+          }
+        }
+      });
     }
     const compute_loss_vf = (data: VPGBufferComputations) => {
-      // TODO:
+      const {obs, ret} = data;
+      return (this.ac.v.apply(obs).sub(ret)).pow(2).mean();
     }
 
-    const update = () => {
-      const data = buffer.get();
+    const update = async () => {
+      const data = await buffer.get();
+      const loss_pi_old = compute_loss_pi(data);
+      // single gd step for policy.
+      let pi_info_new: {
+        approx_kl: number,
+        ent: number
+      };
+      const pi_grads = pi_optimizer.computeGradients(() => {
+        const {loss_pi, pi_info} = compute_loss_pi(data);
+        pi_info_new = pi_info as typeof pi_info_new;
+        return loss_pi as tf.Scalar;
+      });
+      // TODO: mpi avg grads here
+      pi_optimizer.applyGradients(pi_grads.grads);
+
+      for (let i = 0; i < configs.train_v_iters; i++) {
+        const vf_grads = vf_optimizer.computeGradients(() => {
+          const loss_v = compute_loss_vf(data);
+          return loss_v as tf.Scalar; 
+        });
+        vf_optimizer.applyGradients(vf_grads.grads);
+        // TODO: mpi avg grads here
+      }
       // TODO
+      // log changes
+      console.log("=====")
+      console.log("KL, ENT", pi_info_new!);
     }
 
     let start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
@@ -160,7 +208,46 @@ export class VPG<
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
         // TODO
+        let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
+        let action = np.tensorLikeToNdArray(this.actionToTensor(a));
+        let stepInfo = env.step(action);
+        let next_o = stepInfo.observation;
+        let r = stepInfo.reward;
+        let d = stepInfo.done;
+        ep_ret += 1;
+        ep_len += 1;
+
+        // TODO, log vvals
+        buffer.store(np.unsqueeze(np.tensorLikeToNdArray(o), 0), np.tensorLikeToNdArray(a), r, np.tensorLikeToNdArray(v).get(0, 0), np.tensorLikeToNdArray(logp_a!).get(0, 0));
+
+        o = next_o;
+
+        const timeout = ep_len === configs.max_ep_len;
+        const terminal = d || timeout;
+        const epoch_ended = t === local_steps_per_epoch - 1;
+        if (terminal || epoch_ended) {
+          if (epoch_ended && !terminal) {
+            console.log(`Warning: trajectory cut off by epoch at ${ep_len} steps`);
+          }
+          let v = 0;
+          if (timeout || epoch_ended) {
+            v = (this.ac.step(np.tensorLikeToTensor(o)).v.arraySync() as number[])[0];
+          }
+          buffer.finishPath(v);
+          if (terminal) {
+            // store ep ret and eplen stuff
+          }
+          o = env.reset();
+          console.log({terminal, t, epoch_ended, epoch, ep_len, ep_ret})
+          ep_ret = 0; ep_len = 0;
+        }
       }
+      // TODO save model
+
+      // update actor critic
+      await update();
+
+      // log info about the epoch!?
     }
   }
 }

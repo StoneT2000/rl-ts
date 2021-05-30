@@ -27,10 +27,7 @@ export interface VPGTrainConfigs {
     info: any;
     loss: number | null;
   }): any;
-  epochCallback(epochDate: {
-    epoch: number;
-    avg_rep_ret: number;
-  }): any;
+  epochCallback(epochDate: { epoch: number; avg_rep_ret: number }): any;
   pi_optimizer: tf.Optimizer;
   vf_optimizer: tf.Optimizer;
   /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
@@ -97,7 +94,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
    * @returns action
    */
   public act(observation: Observation): Action {
-    return np.tensorLikeToNdArray(this.actionToTensor((this.ac.act(this.obsToTensor(observation)))));
+    return np.tensorLikeToNdArray(this.actionToTensor(this.ac.act(this.obsToTensor(observation))));
   }
 
   public async train(trainConfigs: Partial<VPGTrainConfigs>) {

@@ -57,10 +57,10 @@ export interface DQNTrainConfigs<Observation, Action> {
 }
 type Observation = NdArray;
 type Action = NdArray | number;
-export class DQN<
-  ObservationSpace extends Space<Observation>,
-  ActionSpace extends Space<Action>,
-> extends Agent<Observation, Action> {
+export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+  Observation,
+  Action
+> {
   public configs: DQNConfigs<Observation, Action> = {
     replayBufferCapacity: 1000,
     obsToTensor: (obs: Observation) => {
@@ -181,7 +181,7 @@ export class DQN<
       }
       if (configs.savePath && configs.saveLocation) {
         if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
-          // save policy and target net models. 
+          // save policy and target net models.
           const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
           const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
           if (configs.verbose) {
@@ -232,7 +232,7 @@ export class DQN<
    * Select action with eps probability of sampling from action space
    * @param obs - observation
    * @param eps - probability of selecting random action
-   * @returns 
+   * @returns
    */
   private actEps(obs: Observation, eps: number): Action {
     if (random.randomVal() > eps) {

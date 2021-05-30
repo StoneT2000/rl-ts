@@ -10,6 +10,7 @@ This is a RL gym and library built with **typescript** on top of [TensorFlow.js]
 - [Features](#features)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Comparisons with Other Libraries](#comparisons-with-other-libraries)
 - [Development](#development)
 
 ## Features
@@ -121,6 +122,15 @@ npm i github:nicolaspanel/numjs
 ```
 
 `numjs` has not been updated on the npm registry for a while unfortunately so `npm i numjs` will likely not work.
+## Comparisons with Other Libraries
+
+There are a rare few popular reinforcement learning libraries in javascript. https://github.com/janhuenermann/neurojs, https://github.com/karpathy/reinforcejs are two of the most popular ones (by GitHub stars) and there are an assortment of smaller libraries implementing individual algorithms, environements etc. on npm.
+
+What makes rl-ts stands out is that its much more comprehensive, with many more baseline algorithms and tools at your disposal. Moreover, algorithms are built on top of tensorflow and are built to be state of the art based on the work from researchers at OpenAI and DeepMind, making rl-ts blazingly fast compared to other libraries.
+
+Moreover, it comes packaged with a standard environment class along with integrated environments you can instantly run algorithms on. Too often other libraries don't provide environments, leading to users having to write their own unique environment code, making it more difficult to establish benchmarks and produce reproducible code.
+
+For a full list of benchmarking tests comparing rl-ts with neurojs and reinforcejs see: WIP
 
 ## Development
 

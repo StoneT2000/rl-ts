@@ -3,10 +3,11 @@ import path from 'path';
 import { Box, Discrete } from '../../../Spaces';
 import nj, { NdArray } from 'numjs';
 import * as random from '../../../utils/random';
-import { sleep } from '../../../utils/sleep';
+import { tensorLikeToNdArray } from '../../../utils/np';
 
 export type State = NdArray<number>;
-export type Action = number;
+export type Observation = NdArray<number>;
+export type Action = number | TensorLike;
 export type ActionSpace = Discrete;
 export type ObservationSpace = Box;
 export type Reward = number;
@@ -16,12 +17,12 @@ export interface CartPoleConfigs {
 }
 
 /**
- * Simple GridWorld based on the gridworld presented in Chapters 3-4 in the Intro to RL book by Barto Sutton
+ * CartPole environment
  */
-export class CartPole extends Environment<ObservationSpace, ActionSpace, State, Action, Reward> {
+export class CartPole extends Environment<ObservationSpace, ActionSpace, Observation, State, Action, Reward> {
   public observationSpace: ObservationSpace;
-  /** 0, 1, 2, 3 represent North, East, South, West directions */
-  public actionSpace = new Discrete(4);
+  /** 0 or 1 represent applying force of -force_mag or force_mag */
+  public actionSpace = new Discrete(2);
 
   public gravity = 9.8;
   public masscart = 1.0;
@@ -65,8 +66,9 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     let x_dot = this.state.get(1);
     let theta = this.state.get(2);
     let theta_dot = this.state.get(3);
+    const a = tensorLikeToNdArray(action).get(0);
 
-    const force = action === 1 ? this.force_mag : -this.force_mag;
+    const force = a === 1 ? this.force_mag : -this.force_mag;
     const costheta = Math.cos(theta);
     const sintheta = Math.sin(theta);
 
@@ -108,7 +110,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
       reward = 0.0;
     }
 
-    if (!this.actionSpace.contains(action)) {
+    if (!this.actionSpace.contains(a)) {
       throw new Error(`${action} is invalid action in cartpole env`);
     }
     return {
@@ -126,7 +128,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, State, 
     if (mode === 'web') {
       if (!this.viewer.isInitialized()) await this.viewer.initialize(path.join(__dirname, '../'), 'cartpole/');
       const delayMs = 1 / (configs.fps / 1000);
-      await sleep(delayMs);
+      await this.sleep(delayMs);
       await this.updateViewer(this.state, {
         timestep: this.timestep,
         globalTimestep: this.globalTimestep,

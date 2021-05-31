@@ -67,4 +67,15 @@ describe('Test numpy (in ts) utils', () => {
     expect(np.arrayEqual(b.selection.data as number[], [2, 3, 4, 5, 4])).to.equal(true);
     expect(np.arrayEqual(a.selection.data as number[], [2, 3, 4, 5])).to.equal(true);
   });
+  it('should unsqueeze correctly', () => {
+    const x = nj.zeros([3, 3, 3]);
+    let ref = x.reshape(1, ...x.shape);
+    const a = np.unsqueeze(x, 0);
+    expect(np.arrayEqual(a.selection.stride, ref.selection.stride)).to.equal(true);
+    expect(np.arrayEqual(a.selection.shape, ref.selection.shape)).to.equal(true);
+    ref = ref.reshape(3, 1, 3, 3);
+    np.unsqueeze(x, 1, false);
+    expect(np.arrayEqual(x.selection.stride, ref.selection.stride)).to.equal(true);
+    expect(np.arrayEqual(x.selection.shape, ref.selection.shape)).to.equal(true);
+  });
 });

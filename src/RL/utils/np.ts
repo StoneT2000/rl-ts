@@ -48,9 +48,39 @@ export const reduceMult = (arr: number[] | ndarray.NdArray): number => {
   }
   return ret;
 };
-
 export const zeros = (shape: number[], dtype: dtype = 'float32') => {
   return ndarray(new types[dtype](reduceMult(shape)), shape);
+};
+
+export const tensorLikeToNdArray = (x: TensorLike): NdArray => {
+  if (x instanceof Tensor) {
+    x = fromTensorSync(x);
+  } else if (x instanceof Array) {
+    x = pack(x);
+  } else if (typeof x === 'number') {
+    x = nj.array([x]);
+  }
+  return x;
+};
+export const tensorLikeToTensor = (x: TensorLike): Tensor => {
+  if (x instanceof Tensor) {
+    return x;
+  } else if (x instanceof Array) {
+    x = pack(x);
+  } else if (typeof x === 'number') {
+    x = nj.array([x]);
+  }
+  return tensor(x.selection.data).reshape(x.shape);
+};
+export const NdArrayToTensorLike = (x: NdArray, target: TensorLike): TensorLike => {
+  if (target instanceof Tensor) {
+    return tensor(x.selection.data).reshape(x.shape);
+  } else if (target instanceof Array) {
+    return unpack(x);
+  } else if (typeof target === 'number') {
+    return x.get(0);
+  }
+  return x;
 };
 
 /**
@@ -67,8 +97,8 @@ export const fromTensor = async (tensor: Tensor) => {
  * @param tensor
  */
 export const fromTensorSync = (tensor: Tensor) => {
-  const data = tensor.dataSync();
-  return nj.array(data, tensor.dtype as ndarray.DataType).reshape(...tensor.shape);
+  const data = tensor.arraySync();
+  return nj.array(data as number[], tensor.dtype as ndarray.DataType);
 };
 
 /**
@@ -205,4 +235,21 @@ export const fromNj = (x: NdArray): ndarray.NdArray => {
 };
 export const toNj = (x: ndarray.NdArray) => {
   return nj.array(_unpack(x), x.dtype);
+};
+
+// this exists because the package's reshape function does not quite work
+export const unsqueeze = (x: NdArray, index: number, copy = true): NdArray => {
+  if (copy) {
+    x = x.clone();
+  }
+  x.selection.shape = [...x.shape.slice(0, index), 1, ...x.shape.slice(index)];
+
+  // compute the new stride
+  let shapemult = 1;
+  x.selection.stride = new Array(x.shape.length);
+  for (let i = x.shape.length - 1; i >= 0; i--) {
+    shapemult = shapemult * x.shape[i];
+    x.selection.stride[i] = Math.floor(shapemult / x.shape[i]);
+  }
+  return x;
 };

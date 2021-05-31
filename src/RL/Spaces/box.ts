@@ -28,7 +28,7 @@ export class Box extends Space<nj.NdArray<number>> {
     public shape: Shape,
     public dtype: DataType = 'float32'
   ) {
-    super();
+    super({ discrete: false });
     let lowerBounds: null | nj.NdArray<number> = nj.zeros(shape, dtype);
     let upperBounds: null | nj.NdArray<number> = nj.zeros(shape, dtype);
     if (typeof low === 'number') {
@@ -118,11 +118,5 @@ export class Box extends Space<nj.NdArray<number>> {
   contains(x: NdArray): boolean {
     if (!np.arrayEqual(x.shape, this.shape)) return false;
     return true;
-  }
-  to_jsonable(sample_n: NdArray[]) {
-    return sample_n;
-  }
-  from_jsonable(sample_n: NdArray[]) {
-    return sample_n;
   }
 }

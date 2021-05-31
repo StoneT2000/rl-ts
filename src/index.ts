@@ -4,3 +4,6 @@ export * as Environments from './RL/Environments';
 export * as Spaces from './RL/Spaces';
 export { Algos } from './RL/Algos';
 export { DP } from './RL/DP';
+export * as random from './RL/utils/random';
+export * as Models from './RL/Models';
+export * as ct from './RL/utils/clusterTools';

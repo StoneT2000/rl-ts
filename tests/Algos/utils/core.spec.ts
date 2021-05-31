@@ -8,7 +8,7 @@ describe('Test Algos utils', () => {
     const res = np.unpack(discountCumSum(x, discount));
     const expectedRes = [1.71386719, 2.85546875, 3.421875, 1.6875, 2.75, 3];
     for (let i = 0; i < expectedRes.length; i++) {
-      expect(res[i]).to.be.closeTo(expectedRes[i], 1e-10);
+      expect(res[i]).to.be.closeTo(expectedRes[i], 1e-6);
     }
   });
 });

@@ -21,11 +21,11 @@ export class PolicyIteration<
   private repToState: RepToState<State, any>;
 
   /** Private sampleEnv for purposes of binding */
-  private sampleEnv: Environment<ObservationSpace, ActionSpace, State, Action, number>;
+  private sampleEnv: Environment<ObservationSpace, ActionSpace, State, State, Action, number>;
 
   constructor(
     /** Function that creates a new environment that can be reset to different states */
-    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, Action, number>,
+    public makeEnv: () => Environment<ObservationSpace, ActionSpace, State, State, Action, number>,
     public configs: {
       /** Function to map environment to a hashable state representation. Required if environment does not provide this */
       stateToRep?: StateToRep<State, any>;

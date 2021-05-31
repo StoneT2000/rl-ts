@@ -43,6 +43,10 @@ const main = async () => {
     );
   };
 
+  // Uncomment the 2 lines below to train on 2 CPUs. Will train on forkCount + 1 cpus.
+  // let forkCount = 1;
+  // await RL.ct.fork(forkCount);
+
   // train the actor critic model with vpg
   vpg.train({
     verbose: true,

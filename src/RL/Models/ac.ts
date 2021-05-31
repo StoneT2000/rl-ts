@@ -69,14 +69,11 @@ export class MLPGaussianActor extends ActorBase<tf.Tensor> {
   }
   _distribution(obs: tf.Tensor) {
     const mu = this.mu_net.apply(obs) as tf.Tensor; // [B, act_dim]
-    // let mu = tf.zeros([obs.shape[0], this.act_dim]).add(this.mu);
     const batch_size = mu.shape[0];
-    // console.log(this.log_std);
     const std = tf.exp(this.log_std).expandDims(0).tile([batch_size, 1]); // from [act_dim] shaped to [B, act_dim]
     return new Normal(mu, std);
   }
   _log_prob_from_distribution(pi: Normal, act: tf.Tensor): tf.Tensor {
-    // TODO: check need sum(-1)? torch needs it
     return pi.logProb(act).sum(-1);
   }
 }

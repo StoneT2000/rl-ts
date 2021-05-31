@@ -127,7 +127,14 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     const obs_dim = env.observationSpace.shape;
     const act_dim = env.actionSpace.shape;
 
-    const local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
+      configs.steps_per_epoch = Math.ceil(local_steps_per_epoch) * ct.numProcs();
+      console.warn(
+        `Changing steps per epoch to ${configs.steps_per_epoch} as there are ${ct.numProcs()} processes running`
+      );
+      local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    }
 
     const buffer = new VPGBuffer({
       gamma: configs.gamma,
@@ -137,25 +144,29 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       size: local_steps_per_epoch,
     });
 
-    if (configs.verbose) {
+    if (configs.verbose && ct.id() === 0) {
       console.log('Beginning training with configs', configs);
     }
 
-    const compute_loss_pi = (data: VPGBufferComputations) => {
+    type pi_info = {
+      approx_kl: number;
+      entropy: number;
+    };
+    const compute_loss_pi = (data: VPGBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean().mul(-1);
-        // console.log(adv?.arraySync())
-        const approx_kl = logp_old.sub(logp_a!).mean().arraySync();
-        const ent = pi.entropy().mean().arraySync();
+
+        const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
+        const entropy = pi.entropy().mean().arraySync() as number;
         return {
           loss_pi,
           pi_info: {
             approx_kl,
-            ent,
+            entropy,
           },
         };
       });
@@ -168,13 +179,19 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     const update = async () => {
       const data = await buffer.get();
       const loss_pi_old = compute_loss_pi(data);
+      let kl = 0;
+      let entropy = 0;
       for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
           // TODO: avg KL divergence approximation
-          const { loss_pi } = compute_loss_pi(data);
+          const { loss_pi, pi_info } = compute_loss_pi(data);
+          kl = pi_info.approx_kl;
+          entropy = pi_info.entropy;
           return loss_pi as tf.Scalar;
         });
-        // TODO: mpi avg grads here
+        kl = await ct.avgNumber(kl);
+        entropy = await ct.avgNumber(entropy);
+        await ct.averageGradients(pi_grads.grads);
         pi_optimizer.applyGradients(pi_grads.grads);
       }
 
@@ -183,15 +200,17 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
           const loss_v = compute_loss_vf(data);
           return loss_v as tf.Scalar;
         });
+        await ct.averageGradients(vf_grads.grads);
         vf_optimizer.applyGradients(vf_grads.grads);
-        // TODO: mpi avg grads here
       }
       // TODO
       // log changes
-      console.log('==============');
-      const loss_pi_new = compute_loss_pi(data);
-      const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
-      console.log({ info: loss_pi_new.pi_info, delta_pi_loss });
+      if (ct.id() === 0) {
+        console.log('==============');
+        const loss_pi_new = compute_loss_pi(data);
+        const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
+        console.log({ info: loss_pi_new.pi_info, delta_pi_loss });
+      }
     };
 
     // const start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
@@ -254,10 +273,13 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
 
       // log info about the epoch!?
       avg_rep_ret /= finished_trajectories;
-      console.log({
-        avg_rep_ret,
-        epoch,
-      });
+      avg_rep_ret = await ct.avgNumber(avg_rep_ret);
+      if (ct.id() === 0) {
+        console.log({
+          avg_rep_ret,
+          epoch,
+        });
+      }
 
       await configs.epochCallback({
         epoch,

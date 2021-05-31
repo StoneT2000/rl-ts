@@ -1,8 +1,8 @@
 {
   "name": "rl-ts",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "",
-  "main": "lib/es6/index.js",
+  "main": "lib/es5/index.js",
   "scripts": {
     "test": "sh ./tests/test.sh",
     "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",

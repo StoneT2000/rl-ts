@@ -128,7 +128,12 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     const obs_dim = env.observationSpace.shape;
     const act_dim = env.actionSpace.shape;
 
-    const local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
+      configs.steps_per_epoch = Math.ceil(local_steps_per_epoch) * ct.numProcs();
+      console.warn(`Changing steps per epoch to ${configs.steps_per_epoch} as there are ${ct.numProcs()} processes running`)
+      local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    }
 
     const buffer = new VPGBuffer({
       gamma: configs.gamma,
@@ -153,7 +158,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
         // pi, logp_a, logp_old are all of shape [B]
         const loss_pi = logp_a!.mul(adv).mean().mul(-1);
-        // console.log(adv?.arraySync())
+
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
         const entropy = pi.entropy().mean().arraySync() as number;
         return {

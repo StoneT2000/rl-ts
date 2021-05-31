@@ -19,7 +19,6 @@ export class Viewer<State> {
    * @returns
    */
   async initialize(distPath: string, urlPath?: string): Promise<void> {
-    console.log("Initializing");
     return new Promise<void>((resolve, reject) => {
       this.setupConnectPromise();
 
@@ -32,10 +31,8 @@ export class Viewer<State> {
 
       this.io.on('connection', (socket) => {
         this._socketConnections += 1;
-        console.log({connected: this._socketConnections, id: ct.id()})
         socket.on('disconnect', () => {
           this._socketConnections -= 1;
-          console.log({disconnected: this._socketConnections})
           if (this._socketConnections === 0) {
             this.setupConnectPromise();
           }

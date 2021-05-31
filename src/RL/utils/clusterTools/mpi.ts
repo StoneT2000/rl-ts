@@ -30,7 +30,6 @@ export const fork = async (forkCount: number) => {
             res(worker);
           });
           worker.on('message', (m) => {
-            // console.log("PRIMARY RECEIVE -> Buffer ", m.data);
             messageBuffer.push(m);
           });
           worker.on('error', (err) => {

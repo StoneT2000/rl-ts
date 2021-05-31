@@ -14,6 +14,7 @@ export interface Message {
 let workers: cluster.Worker[] = [];
 let _procCount = 1;
 let _id = 0;
+const messageBuffer: Message[] = [];
 // export const setupMPI = async () => {
 // TODO: do any setup here if needed
 // };
@@ -26,8 +27,11 @@ export const fork = async (forkCount: number) => {
       listeningPromises.push(
         new Promise((res, rej) => {
           worker.on('online', async () => {
-            await send({ type: MessageType.INIT, data: [worker.id, forkCount + 1] }, worker);
             res(worker);
+          });
+          worker.on('message', (m) => {
+            // console.log("PRIMARY RECEIVE -> Buffer ", m.data);
+            messageBuffer.push(m);
           });
           worker.on('error', (err) => {
             rej(err);
@@ -36,11 +40,18 @@ export const fork = async (forkCount: number) => {
       );
     }
     workers = await Promise.all(listeningPromises);
+    const workerInitSignals: Promise<void>[] = [];
+    for (const worker of workers) { 
+      workerInitSignals.push(send({ type: MessageType.INIT, data: [worker.id, forkCount + 1] }, worker));
+    }
+    await Promise.all(workers);
+    // await sendall({ type: MessageType.INIT, data: })
     _procCount = forkCount + 1;
     _id = 0;
   } else {
     // wait for message
     const data = (await receive()).data! as number[];
+    // await send({ type: MessageType.INIT, data: []}, process);
     _id = data[0];
     _procCount = data[1];
   }
@@ -63,9 +74,19 @@ export const sendall = async (msg: Message) => {
 
 export const receiveFromWorker = async (worker: cluster.Worker): Promise<Message> => {
   return new Promise((resolve) => {
-    worker.once('message', (m) => {
+    const listener = (m: Message) => {
+      // console.log("Listener was called", m.data);
       resolve(m);
-    });
+      messageBuffer.shift()!;
+    };
+    worker.once('message', listener);
+    
+    if (messageBuffer.length > 0) {
+      const msg = messageBuffer.shift()!;
+      // console.log("Listener skipped", msg.data)
+      resolve(msg);
+      worker.removeListener('message', listener);
+    }
   });
 };
 
@@ -80,9 +101,19 @@ export const receiveAll = async () => {
 export const receive = async (): Promise<Message> => {
   // TODO: can this fail?
   return new Promise((resolve) => {
-    process.once('message', (m) => {
+    const listener = (m: Message) => {
+      // console.log("Listener was called", m.data);
       resolve(m);
-    });
+      messageBuffer.shift()!;
+    };
+    process.once('message', listener);
+    
+    if (messageBuffer.length > 0) {
+      const msg = messageBuffer.shift()!;
+      // console.log("Listener skipped", msg.data)
+      resolve(msg);
+      process.removeListener('message', listener);
+    }
   });
 };
 

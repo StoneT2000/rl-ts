@@ -1,9 +1,24 @@
 import * as tf from '@tensorflow/tfjs-node';
 import * as ct from '../../../src/RL/utils/clusterTools';
 import { strict as assert } from 'assert';
+import { sleep } from '../../../src/RL/utils/sleep';
 
 const main = async () => {
   await ct.fork(2);
+
+  // test synchronization
+  if (ct.id() === 1) {
+    await sleep(1000);
+  }
+  let val = await ct.sumNumber(10);
+  assert.equal(val, 30);
+  // test synchronization
+  if (ct.id() === 0) {
+    await sleep(100);
+  }
+  val = await ct.sumNumber(15);
+  assert.equal(val, 45);
+
 
   // each process sends input to primary to then sum up element wise.
   const id = ct.id();
@@ -33,6 +48,7 @@ const main = async () => {
       'Incorrect average computation'
     );
   }
+
   try {
     await ct.disconnect();
   } catch (err) {

@@ -2,6 +2,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import express from 'express';
 import open from 'open';
+import { ct } from '../../..';
 export class Viewer<State> {
   io: Server | undefined;
   _socketConnections = 0;
@@ -18,6 +19,7 @@ export class Viewer<State> {
    * @returns
    */
   async initialize(distPath: string, urlPath?: string): Promise<void> {
+    console.log("Initializing");
     return new Promise<void>((resolve, reject) => {
       this.setupConnectPromise();
 
@@ -30,8 +32,10 @@ export class Viewer<State> {
 
       this.io.on('connection', (socket) => {
         this._socketConnections += 1;
+        console.log({connected: this._socketConnections, id: ct.id()})
         socket.on('disconnect', () => {
           this._socketConnections -= 1;
+          console.log({disconnected: this._socketConnections})
           if (this._socketConnections === 0) {
             this.setupConnectPromise();
           }

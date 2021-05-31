@@ -131,7 +131,9 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
       configs.steps_per_epoch = Math.ceil(local_steps_per_epoch) * ct.numProcs();
-      console.warn(`Changing steps per epoch to ${configs.steps_per_epoch} as there are ${ct.numProcs()} processes running`)
+      console.warn(
+        `Changing steps per epoch to ${configs.steps_per_epoch} as there are ${ct.numProcs()} processes running`
+      );
       local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     }
 
@@ -148,10 +150,10 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     }
 
     type pi_info = {
-      approx_kl: number,
-      entropy: number,
-    }
-    const compute_loss_pi = (data: VPGBufferComputations): {loss_pi: tf.Tensor, pi_info: pi_info} => {
+      approx_kl: number;
+      entropy: number;
+    };
+    const compute_loss_pi = (data: VPGBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
@@ -204,7 +206,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       }
       // TODO
       // log changes
-      if(ct.id() === 0) {
+      if (ct.id() === 0) {
         console.log('==============');
         const loss_pi_new = compute_loss_pi(data);
         const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();

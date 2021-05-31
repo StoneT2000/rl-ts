@@ -33,7 +33,7 @@ const handleOp = async (x: tf.Tensor, rest: tf.Tensor, op: OPS) => {
  * @param x - tensor with shape [...shape]
  * @param rest - tensor with shape [P, ...shape]
  */
- const handleOpNumber = async (x: number, rest: number[], op: OPS) => {
+const handleOpNumber = async (x: number, rest: number[], op: OPS) => {
   switch (op) {
     case OPS.SUM: {
       let val = 0;
@@ -43,7 +43,7 @@ const handleOp = async (x: tf.Tensor, rest: tf.Tensor, op: OPS) => {
       return x + val;
     }
     default:
-      throw new Error(`${op} is invalid op`)
+      throw new Error(`${op} is invalid op`);
   }
 };
 
@@ -62,7 +62,7 @@ export const reduce = async (x: tf.Tensor, op: OPS) => {
         return x.add(val.sum(0));
     }
   } else if (cluster.isWorker) {
-    await mpi.send({ type: mpi.MessageType.SEND , data: mpi.tensorToSerializable(x) }, process);
+    await mpi.send({ type: mpi.MessageType.SEND, data: mpi.tensorToSerializable(x) }, process);
   }
 };
 
@@ -82,7 +82,7 @@ export const allreduce = async (x: tf.Tensor, op: OPS) => {
     return val;
   } else {
     // workers wait for a message from master
-    await mpi.send({ type: mpi.MessageType.SEND , data: mpi.tensorToSerializable(x) }, process);
+    await mpi.send({ type: mpi.MessageType.SEND, data: mpi.tensorToSerializable(x) }, process);
     return tf.tensor((await mpi.receive()).data! as number[]);
   }
 };
@@ -92,13 +92,13 @@ export const allreduce = async (x: tf.Tensor, op: OPS) => {
  * @param x
  * @param op
  */
- export const allreduceNumber = async (x: number, op: OPS) => {
+export const allreduceNumber = async (x: number, op: OPS) => {
   if (mpi.numProcs() === 1) return x;
   if (cluster.isMaster) {
     const res = await mpi.receiveAll();
     const val = res.map((v) => v.data! as number); // [P, ...shape] (P = number of workers)
     const ret = await handleOpNumber(x, val, op);
-    await mpi.sendall({ type: mpi.MessageType.SEND , data: ret });
+    await mpi.sendall({ type: mpi.MessageType.SEND, data: ret });
     return ret;
   } else {
     // workers wait for a message from master
@@ -121,19 +121,19 @@ export const avg = async (x: tf.Tensor) => {
 export const sumNumber = async (x: number) => {
   if (mpi.numProcs() === 1) return x;
   return allreduceNumber(x, OPS.SUM);
-}
+};
 
-export const avgNumber = async(x: number) => {
+export const avgNumber = async (x: number) => {
   if (mpi.numProcs() === 1) return x;
   const val = await sumNumber(x);
   return val / mpi.numProcs();
-}
+};
 
 /** averages gradients produced by optimizer.computeGradients function in tensorflow. Stores averaged values in place */
 export const averageGradients = async (grads: NamedTensorMap) => {
   if (mpi.numProcs() === 1) return grads;
   for (const key of Object.keys(grads)) {
-    grads[key] = await avg(grads[key])
+    grads[key] = await avg(grads[key]);
   }
   return grads;
 };

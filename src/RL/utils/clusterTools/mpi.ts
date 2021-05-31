@@ -40,7 +40,7 @@ export const fork = async (forkCount: number) => {
     }
     workers = await Promise.all(listeningPromises);
     const workerInitSignals: Promise<void>[] = [];
-    for (const worker of workers) { 
+    for (const worker of workers) {
       workerInitSignals.push(send({ type: MessageType.INIT, data: [worker.id, forkCount + 1] }, worker));
     }
     await Promise.all(workers);
@@ -79,7 +79,7 @@ export const receiveFromWorker = async (worker: cluster.Worker): Promise<Message
       messageBuffer.shift()!;
     };
     worker.once('message', listener);
-    
+
     if (messageBuffer.length > 0) {
       const msg = messageBuffer.shift()!;
       // console.log("Listener skipped", msg.data)
@@ -106,7 +106,7 @@ export const receive = async (): Promise<Message> => {
       messageBuffer.shift()!;
     };
     process.once('message', listener);
-    
+
     if (messageBuffer.length > 0) {
       const msg = messageBuffer.shift()!;
       // console.log("Listener skipped", msg.data)

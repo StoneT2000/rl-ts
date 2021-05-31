@@ -19,7 +19,6 @@ const main = async () => {
   val = await ct.sumNumber(15);
   assert.equal(val, 45);
 
-
   // each process sends input to primary to then sum up element wise.
   const id = ct.id();
   if (id === 0) {

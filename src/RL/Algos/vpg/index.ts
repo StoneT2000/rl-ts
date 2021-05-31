@@ -10,7 +10,6 @@ import * as np from '../../utils/np';
 import * as ct from '../../utils/clusterTools';
 import { NdArray } from 'numjs';
 import { ActorCritic } from '../../Models/ac';
-import { sleep } from '../../utils/sleep';
 export interface VPGConfigs<Observation, Action> {
   /** Converts observations to tensors */
   obsToTensor: (state: Observation) => tf.Tensor;

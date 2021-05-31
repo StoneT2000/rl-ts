@@ -2,7 +2,6 @@ import http from 'http';
 import { Server } from 'socket.io';
 import express from 'express';
 import open from 'open';
-import { ct } from '../../..';
 export class Viewer<State> {
   io: Server | undefined;
   _socketConnections = 0;

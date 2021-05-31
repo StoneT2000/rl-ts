@@ -1,4 +1,4 @@
-# Typescript Reinforcement Learning Library 🤖
+# rl.ts - A Reinforcement Learning Library in Typescript 🤖
 
 <!-- <img src="./assets/rlts.png" style="zoom:20%;" /> -->
 
@@ -83,7 +83,7 @@ Apart from these functions, it's recommended to understand the type of data bein
 
 ### Algorithms
 
-Currently, rl-ts provides high quality baseline algorithms similar to [OpenAI Baselines](https://github.com/openai/baselines/) and some dynammic programming algorithms.
+Currently, rl.ts provides high quality baseline algorithms similar to [OpenAI Baselines](https://github.com/openai/baselines/) and some dynammic programming algorithms.
 
 Algorithms will usually take in a function that generates a new environment and various configurations to create a new algorithm object. Then you can use the `train` function of the algorithm object to train on the environment. All baseline algorithms use TensorFlow.js (tfjs) tensors, and will automatically convert to and from NdArrays to train on environments. Dynammic programming algorithms at the moment work with plain JS arrays and numbers.
 
@@ -128,11 +128,11 @@ npm i github:nicolaspanel/numjs
 
 There are a rare few popular reinforcement learning libraries in javascript. https://github.com/janhuenermann/neurojs, https://github.com/karpathy/reinforcejs are two of the most popular ones (by GitHub stars) and there are an assortment of smaller libraries implementing individual algorithms, environements etc. on npm.
 
-What makes rl-ts stands out is that its much more comprehensive, with many more baseline algorithms and tools at your disposal. Moreover, algorithms are built on top of tensorflow and are built to be state of the art based on the work from researchers at OpenAI and DeepMind, making rl-ts blazingly fast compared to other libraries.
+What makes rl.ts stands out is that its much more comprehensive, with many more baseline algorithms and tools at your disposal. Moreover, algorithms are built on top of tensorflow and are built to be state of the art based on the work from researchers at OpenAI and DeepMind, making rl.ts blazingly fast compared to other libraries.
 
 Moreover, it comes packaged with a standard environment class along with integrated environments you can instantly run algorithms on. Too often other libraries don't provide environments, leading to users having to write their own unique environment code, making it more difficult to establish benchmarks and produce reproducible code.
 
-For a full list of benchmarking tests comparing rl-ts with neurojs and reinforcejs see: WIP
+For a full list of benchmarking tests comparing rl.ts with neurojs and reinforcejs see: WIP
 
 ## Development
 

@@ -1,7 +1,7 @@
-import { DQN } from '../../src/RL/Algos/dqn/index';
-import { CartPole } from '../../src/RL/Environments/examples/Cartpole';
+import { DQN } from '../../src/Algos/dqn/index';
+import { CartPole } from '../../src/Environments/examples/Cartpole';
 import * as tf from '@tensorflow/tfjs';
-import * as random from '../../src/RL/utils/random';
+import * as random from '../../src/utils/random';
 import { expect } from 'chai';
 describe('Test DQN', () => {
   it('should run', async () => {

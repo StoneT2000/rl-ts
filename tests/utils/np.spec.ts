@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import * as np from '../../src/RL/utils/np';
+import * as np from '../../src/utils/np';
 import nj from 'numjs';
 describe('Test numpy (in ts) utils', () => {
   it('should set correctly', () => {

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Spaces } from '../../src/';
-import * as np from '../../src/RL/utils/np';
+import * as np from '../../src/utils/np';
 describe('Test box space', () => {
   describe('Test PrimitiveBox2D', () => {
     it('should sample correctly', () => {

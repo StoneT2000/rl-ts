@@ -28,7 +28,7 @@ jobs:
           override-ci-command: npm install
       - run: npm run build
       - run: npm run test
-      - run: npm run codecov
+      # - run: npm run codecov
       - store_artifacts:
           path: coverage/coverage-final.json
           destination: coverage.json

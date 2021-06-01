@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import * as tf from '@tensorflow/tfjs';
-import { Normal } from '../../../src/RL/utils/Distributions/normal';
+import { Normal } from '../../../src/utils/Distributions/normal';
 describe('Test normal distribution class', () => {
   it('should sample correctly', () => {
     const mean = tf.range(1, 5, 1, 'float32');

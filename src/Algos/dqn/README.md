@@ -17,7 +17,7 @@ const dqn = new RL.Algos.DQN(makeEnv, {
 });
 ```
 <!-- TODO - add documentation for the configurations -->
-To train DQN, there are many configurations that can be provided into the `dqn.train(configs)` function that then trains the model on the given environment. See https://github.com/StoneT2000/src/blob/main/src/RL/Algos/dqn/index.ts for options. Full documentation coming soon.
+To train DQN, there are many configurations that can be provided into the `dqn.train(configs)` function that then trains the model on the given environment. See https://github.com/StoneT2000/src/blob/main/src/Algos/dqn/index.ts for options. Full documentation coming soon.
 
 ```js
 dqn.train({ totalEpisodes: 1000, batchSize: 128, verbose: true, epochCallback, });

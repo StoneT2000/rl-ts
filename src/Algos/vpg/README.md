@@ -4,7 +4,7 @@ This is an implementation of the vanilla policy gradient algorithm (VPG). It wor
 
 For a sample script of using VPG on the CartPole environment, see https://github.com/StoneT2000/src/tree/main/examples/VPG/cartpole.js
 
-Note that you need to create your own Actor Critic model which you can find settings for at https://github.com/StoneT2000/src/tree/main/src/RL/Models/ac.ts
+Note that you need to create your own Actor Critic model which you can find settings for at https://github.com/StoneT2000/src/tree/main/src/Models/ac.ts
 
 By default, the actor will produce continuous actions. The example shows you how to discretize the actions by providing a `actionToTensor` parameter.
 

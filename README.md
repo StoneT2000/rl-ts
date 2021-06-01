@@ -6,7 +6,7 @@
 
 RL.ts is a RL gym and library built with **typescript** on top of [TensorFlow.js](https://www.tensorflow.org/js), enabling faster bug-free development, powerful web visuals, and a gateway to developing and comparing reinforcement learning algorithms on the web and / or with node.js in javascript or typescript.
 
-![](https://github.com/StoneT2000/rl-ts/raw/main/src/RL/Environments/cartpole.gif)
+![](https://github.com/StoneT2000/rl-ts/raw/main/src/Environments/cartpole.gif)
 
 **Table of Contents**
 - [Features](#features)
@@ -19,7 +19,7 @@ RL.ts is a RL gym and library built with **typescript** on top of [TensorFlow.js
 
 - Uses a **Open AI Gym** like interface to provide an accessible and general approach for developing environments and testing algorithms
 
-- Provides [standard integrated environments](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Environments) like **CartPole** and **GridWorld**
+- Provides [standard integrated environments](https://github.com/StoneT2000/rl-ts/tree/main/src/Environments) like **CartPole** and **GridWorld**
 
 - Provides a toolbox of baseline algorithms such as **Deep Q Networks (DQN)**, **Policy Gradient methods**, as well as other algorithms like policy iteration.
 
@@ -101,12 +101,12 @@ const policyIteration = new RL.DP.PolicyIteration(makeEnv, configs); // create a
 At the moment, the following algorithms are implemented:
 
 - Policy Gradient Methods
-  - [VPG](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Algos/vpg)
+  - [VPG](https://github.com/StoneT2000/rl-ts/tree/main/src/Algos/vpg)
 - Q-Learning
-  - [DQN](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/Algos/dqn)
+  - [DQN](https://github.com/StoneT2000/rl-ts/tree/main/src/Algos/dqn)
 - DP Methods
-  - [Policy Evaluation](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
-  - [Policy Iteration](https://github.com/StoneT2000/rl-ts/tree/main/src/RL/DP)
+  - [Policy Evaluation](https://github.com/StoneT2000/rl-ts/tree/main/src/DP)
+  - [Policy Iteration](https://github.com/StoneT2000/rl-ts/tree/main/src/DP)
 
 Each of the links above take you to the part of the repo with that algorithm and has guides on how to use them.
 

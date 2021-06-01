@@ -10,3 +10,6 @@ By default, the actor will produce continuous actions. The example shows you how
 
 To learn how VPG works, see https://spinningup.openai.com/en/latest/algorithms/vpg.html
 
+## Customization
+
+To customize VPG further and add features that aren't possible through configuration, read this page on [customization](https://github.com/StoneT2000/rl-ts/wiki/Customization)

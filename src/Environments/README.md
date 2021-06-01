@@ -72,3 +72,7 @@ State can be anything but it is recommended to be the full state. Info can be an
 To create the html and js and make it work with the environment, you can first copy [index.html]() and [sketch.js]() from the CartPole environment as a template. This tutorial uses the [p5js](https://p5js.org/) library to render the environment.
 
 In [index.html](), it will automatically await for `state` and `info` sent to it. Upon receiving updates, it will call `update(state, info)`, where `update` is a function that you will need to define. An example `update` function is defined in [sketch.js]().
+
+## Customization
+
+To customize these integrated environments further and add features that aren't possible through configuration, read this page on [customization](https://github.com/StoneT2000/rl-ts/wiki/Customization)

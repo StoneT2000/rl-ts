@@ -33,6 +33,4 @@ where `obs` is the observation returned by the environment. The default act func
 
 ## Customization
 
-See this page for instructions on how to customize algorithms more in depth than the available configurations without having to rewrite the algorithm from scratch.
-
-If you don't want to write your own DQN from scratch but want your own customizations, you can also directly copy the index.ts file and edit it, compile it yourself and run your own customized version of the DQN. If you want to edit
+To customize DQN further and add features that aren't possible through configuration, read this page on [customization](https://github.com/StoneT2000/rl-ts/wiki/Customization)

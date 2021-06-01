@@ -1,6 +1,8 @@
 # nodejs
 node_modules
 lib
+lib-es5
+lib-es6
 docs
 
 # test artifacts

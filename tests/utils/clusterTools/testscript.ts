@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs-node';
-import * as ct from '../../../src/RL/utils/clusterTools';
+import * as ct from '../../../src/utils/clusterTools';
 import { strict as assert } from 'assert';
-import { sleep } from '../../../src/RL/utils/sleep';
+import { sleep } from '../../../src/utils/sleep';
 
 const main = async () => {
   await ct.fork(2);

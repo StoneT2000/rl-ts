@@ -1,7 +1,7 @@
 import * as RL from '../../src';
-import { CartPole } from '../../src/RL/Environments/examples/Cartpole';
+import { CartPole } from '../../src/Environments/examples/Cartpole';
 import * as tf from '@tensorflow/tfjs';
-import * as random from '../../src/RL/utils/random';
+import * as random from '../../src/utils/random';
 describe('Test VPG', () => {
   it('should run', async () => {
     random.seed(0);

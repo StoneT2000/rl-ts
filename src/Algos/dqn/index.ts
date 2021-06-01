@@ -10,7 +10,6 @@ import * as np from 'rl-ts/lib/utils/np';
 import { Scalar } from '@tensorflow/tfjs';
 import { NdArray } from 'numjs';
 
-
 export interface DQNConfigs<Observation, Action> {
   replayBufferCapacity: number;
   policyNet?: tf.LayersModel;

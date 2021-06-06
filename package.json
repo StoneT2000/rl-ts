@@ -34,6 +34,7 @@
     "@types/node": "^14.14.37",
     "@types/numjs": "^0.16.0",
     "@types/open": "^6.2.1",
+    "@types/pino": "^6.3.8",
     "@types/seedrandom": "^3.0.0",
     "@types/socket.io": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^4.20.0",
@@ -67,6 +68,8 @@
     "ndarray-unpack": "^1.0.0",
     "numjs": "github:nicolaspanel/numjs",
     "open": "^8.2.0",
+    "pino": "^6.11.3",
+    "pino-pretty": "^5.0.2",
     "seedrandom": "^3.0.5",
     "socket.io": "^4.1.2"
   }

@@ -52,6 +52,17 @@ export const zeros = (shape: number[], dtype: dtype = 'float32') => {
   return ndarray(new types[dtype](reduceMult(shape)), shape);
 };
 
+export const tensorLikeToJSArray = (x: TensorLike): number |Array<any> => {
+  if (x instanceof Tensor) {
+    return x.arraySync();
+  } else if (x instanceof Array) {
+    return x;
+  } else if (typeof x === 'number') {
+    return [x];
+  }
+  return unpack(x);
+};
+
 export const tensorLikeToNdArray = (x: TensorLike): NdArray => {
   if (x instanceof Tensor) {
     x = fromTensorSync(x);

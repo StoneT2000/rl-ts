@@ -8,11 +8,28 @@ import { NamedTensorMap } from '@tensorflow/tfjs-node';
 import cluster from 'cluster';
 import * as mpi from './mpi';
 import { OPS } from './ops';
+import * as np from 'rl-ts/lib/utils/np';
 
 /**
  * Compute various statistics of a registered variable
  */
-export const statisticsScalar = () => {};
+export const statisticsScalar = async (x: tf.Tensor, asTensor = true) => {
+  const global_sum = await sum(x.sum());
+  const global_n = await sumNumber(x.shape[0]);
+  const mean = global_sum.div(global_n);
+  const global_sum_sq = await sum(x.sub(mean).pow(2).sum());
+  const std = global_sum_sq.div(global_n).sqrt();
+  if (asTensor) {
+    return {
+      mean,
+      std,
+    };
+  }
+  return {
+    mean: np.tensorLikeToJSArray(mean),
+    std: np.tensorLikeToJSArray(std),
+  };
+};
 
 /**
  *

@@ -63,9 +63,8 @@ export interface DQNTrainConfigs<Observation, Action> {
   verbosity: string;
   batchSize: number;
 }
-type Observation = NdArray;
 type Action = NdArray | number;
-export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>, Observation> extends Agent<
   Observation,
   Action
 > {
@@ -183,6 +182,7 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
       // perform a step of optimization on policy net
       let loss: number | null = null;
       if (t >= configs.learningStarts && t % configs.policyTrainFreq === 0) {
+        
         loss = await this.optimizeModel({
           gamma,
           batchSize: configs.batchSize,

@@ -3,7 +3,7 @@ import { Environment } from 'rl-ts/lib/Environments';
 import { Space } from 'rl-ts/lib/Spaces';
 import * as random from 'rl-ts/lib/utils/random';
 import * as tf from '@tensorflow/tfjs';
-import { VPGBuffer, VPGBufferComputations } from 'rl-ts/lib/Algos/vpg/buffer';
+import { PPOBuffer, PPOBufferComputations } from 'rl-ts/lib/Algos/ppo/buffer';
 import { DeepPartial } from 'rl-ts/lib/utils/types';
 import { deepMerge } from 'rl-ts/lib/utils/deep';
 import * as np from 'rl-ts/lib/utils/np';
@@ -17,7 +17,7 @@ const log = pino({
   },
 });
 
-export interface VPGConfigs<Observation, Action> {
+export interface PPOConfigs<Observation, Action> {
   /** Converts observations to tensors */
   obsToTensor: (state: Observation) => tf.Tensor;
   /** Converts actor critic output tensor to tensor that works with environment. Necessary if in discrete action space! */
@@ -25,7 +25,7 @@ export interface VPGConfigs<Observation, Action> {
   /** Optional act function to replace the default act */
   act?: (obs: Observation) => Action;
 }
-export interface VPGTrainConfigs {
+export interface PPOTrainConfigs {
   stepCallback(stepData: {
     step: number;
     episodeDurations: number[];
@@ -65,11 +65,11 @@ export interface VPGTrainConfigs {
   name: string;
 }
 type Action = NdArray | number;
-export class VPG<Observation, ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+export class PPO<Observation, ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
   Observation,
   Action
 > {
-  public configs: VPGConfigs<Observation, Action> = {
+  public configs: PPOConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
@@ -93,8 +93,8 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
     public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
     /** The actor crtic model */
     public ac: ActorCritic<tf.Tensor>,
-    /** configs for the VPG model */
-    configs: DeepPartial<VPGConfigs<Observation, Action>> = {}
+    /** configs for the PPO model */
+    configs: DeepPartial<PPOConfigs<Observation, Action>> = {}
   ) {
     super();
     this.configs = deepMerge(this.configs, configs);
@@ -114,8 +114,8 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
     return np.tensorLikeToNdArray(this.actionToTensor(this.ac.act(this.obsToTensor(observation))));
   }
 
-  public async train(trainConfigs: Partial<VPGTrainConfigs>) {
-    let configs: VPGTrainConfigs = {
+  public async train(trainConfigs: Partial<PPOTrainConfigs>) {
+    let configs: PPOTrainConfigs = {
       vf_optimizer: tf.train.adam(1e-3),
       pi_optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
@@ -128,7 +128,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
       seed: 0,
       train_pi_iters: 1,
       verbosity: 'info',
-      name: 'VPG_Train',
+      name: 'PPO_Train',
       stepCallback: () => {},
       epochCallback: () => {},
     };
@@ -157,7 +157,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
       local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     }
 
-    const buffer = new VPGBuffer({
+    const buffer = new PPOBuffer({
       gamma: configs.gamma,
       lam: configs.lam,
       actDim: act_dim,
@@ -173,7 +173,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
       approx_kl: number;
       entropy: number;
     };
-    const compute_loss_pi = (data: VPGBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
+    const compute_loss_pi = (data: PPOBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
@@ -192,7 +192,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
         };
       });
     };
-    const compute_loss_vf = (data: VPGBufferComputations) => {
+    const compute_loss_vf = (data: PPOBufferComputations) => {
       const { obs, ret } = data;
       return this.ac.v.apply(obs).sub(ret).pow(2).mean();
     };
@@ -249,7 +249,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-
+        // TODO
         const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);
@@ -260,6 +260,7 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
         ep_ret += r;
         ep_len += 1;
 
+        // TODO, log vvals
         buffer.store(
           np.unsqueeze(np.tensorLikeToNdArray(this.obsToTensor(o)), 0),
           np.tensorLikeToNdArray(a),

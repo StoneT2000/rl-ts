@@ -4,7 +4,7 @@ import * as np from 'rl-ts/lib/utils/np';
 import * as core from 'rl-ts/lib/Algos/utils/core';
 import { Tensor1D } from '@tensorflow/tfjs';
 import * as ct from 'rl-ts/lib/utils/clusterTools';
-export interface VPGBufferConfigs {
+export interface PPOBufferConfigs {
   obsDim: number[];
   actDim: number[];
   /** Buffer Size */
@@ -12,7 +12,7 @@ export interface VPGBufferConfigs {
   gamma?: number;
   lam?: number;
 }
-export interface VPGBufferComputations {
+export interface PPOBufferComputations {
   obs: tf.Tensor;
   act: tf.Tensor1D;
   ret: tf.Tensor1D;
@@ -21,10 +21,10 @@ export interface VPGBufferComputations {
 }
 
 /**
- * Buffer for VPG for storing trajectories experienced by a VPG agent.
+ * Buffer for PPO for storing trajectories experienced by a PPO agent.
  * Uses Generalized Advantage Estimation (GAE-Lambda) to calculate advantages of state-action pairs
  */
-export class VPGBuffer {
+export class PPOBuffer {
   /** Observations buffer */
   public obsBuf: NdArray;
   /** Actions buffer */
@@ -47,7 +47,7 @@ export class VPGBuffer {
   public gamma = 0.99;
   public lam = 0.97;
 
-  constructor(public configs: VPGBufferConfigs) {
+  constructor(public configs: PPOBufferConfigs) {
     if (configs.gamma !== undefined) {
       this.gamma = configs.gamma;
     }
@@ -96,7 +96,7 @@ export class VPGBuffer {
     this.pathStartIdx = this.ptr;
   }
 
-  public async get(): Promise<VPGBufferComputations> {
+  public async get(): Promise<PPOBufferComputations> {
     if (this.ptr !== this.maxSize) {
       throw new Error("Buffer isn't full yet!");
     }

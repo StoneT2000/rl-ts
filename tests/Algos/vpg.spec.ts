@@ -16,7 +16,6 @@ describe('Test VPG', () => {
       },
     });
     await vpg.train({
-      verbose: true,
       steps_per_epoch: 100,
       epochs: 10,
       train_pi_iters: 10,

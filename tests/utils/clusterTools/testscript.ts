@@ -1,3 +1,4 @@
+import * as types from '../../../src/utils/types';
 import * as tf from '@tensorflow/tfjs-node';
 import * as ct from '../../../src/utils/clusterTools';
 import { strict as assert } from 'assert';

@@ -65,7 +65,11 @@ export class MLPGaussianActor extends ActorBase<tf.Tensor> {
   public mu: tf.Variable;
   constructor(obs_dim: number, public act_dim: number, hidden_sizes: number[], activation: ActivationIdentifier) {
     super();
-    this.log_std = tf.variable(tf.ones([act_dim], 'float32').mul(-0.5), true, `gaussian_actor_log_std_${global_gaussian_actor_log_std_id++}`);
+    this.log_std = tf.variable(
+      tf.ones([act_dim], 'float32').mul(-0.5),
+      true,
+      `gaussian_actor_log_std_${global_gaussian_actor_log_std_id++}`
+    );
     this.mu_net = createMLP(obs_dim, act_dim, hidden_sizes, activation, 'MLP Gaussian Actor');
     this.mu = tf.variable(tf.tensor(0));
   }

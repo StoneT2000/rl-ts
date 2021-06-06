@@ -18,7 +18,7 @@ const log = pino({
 });
 
 export interface PPOConfigs<Observation, Action> {
-  /** Converts observations to tensors */
+  /** Converts observations to batchable tensors of shape [1, ...observation shape] */
   obsToTensor: (state: Observation) => tf.Tensor;
   /** Converts actor critic output tensor to tensor that works with environment. Necessary if in discrete action space! */
   actionToTensor: (action: tf.Tensor) => TensorLike;
@@ -87,6 +87,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
 
   public env: Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>;
 
+  /** Converts observations to batchable tensors of shape [1, ...observation shape] */
   private obsToTensor: (obs: Observation) => tf.Tensor;
   private actionToTensor: (action: tf.Tensor) => TensorLike;
 
@@ -283,7 +284,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
         ep_len += 1;
 
         buffer.store(
-          np.unsqueeze(np.tensorLikeToNdArray(this.obsToTensor(o)), 0),
+          np.tensorLikeToNdArray(this.obsToTensor(o)),
           np.tensorLikeToNdArray(a),
           r,
           np.tensorLikeToNdArray(v).get(0, 0),

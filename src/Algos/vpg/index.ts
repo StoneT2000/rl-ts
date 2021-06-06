@@ -10,6 +10,13 @@ import * as np from 'rl-ts/lib/utils/np';
 import * as ct from 'rl-ts/lib/utils/clusterTools';
 import { NdArray } from 'numjs';
 import { ActorCritic } from 'rl-ts/lib/Models/ac';
+import pino from 'pino';
+const log = pino({
+  prettyPrint: {
+    colorize: true,
+  },
+});
+
 export interface VPGConfigs<Observation, Action> {
   /** Converts observations to tensors */
   obsToTensor: (state: Observation) => tf.Tensor;
@@ -27,7 +34,17 @@ export interface VPGTrainConfigs {
     info: any;
     loss: number | null;
   }): any;
-  epochCallback(epochDate: { epoch: number; avg_rep_ret: number }): any;
+  epochCallback(epochDate: {
+    epoch: number;
+    kl: number;
+    entropy: number;
+    delta_pi_loss: number;
+    delta_vf_loss: number;
+    ep_rets: {
+      mean: number;
+      std: number;
+    };
+  }): any;
   pi_optimizer: tf.Optimizer;
   vf_optimizer: tf.Optimizer;
   /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
@@ -36,7 +53,7 @@ export interface VPGTrainConfigs {
   savePath?: string;
   saveLocation?: TFSaveLocations;
   epochs: number;
-  verbose: boolean;
+  verbosity: string;
   gamma: number;
   lam: number;
   train_v_iters: number;
@@ -45,6 +62,7 @@ export interface VPGTrainConfigs {
   /** maximum length of each trajectory collected */
   max_ep_len: number;
   seed: number;
+  name: string;
 }
 type Action = NdArray | number;
 type Observation = NdArray;
@@ -102,7 +120,6 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       vf_optimizer: tf.train.adam(1e-3),
       pi_optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
-      verbose: false,
       steps_per_epoch: 10000,
       max_ep_len: 1000,
       epochs: 50,
@@ -111,10 +128,13 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       lam: 0.97,
       seed: 0,
       train_pi_iters: 1,
+      verbosity: 'info',
+      name: 'VPG_Train',
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
+    log.level = configs.verbosity;
 
     const { vf_optimizer, pi_optimizer } = configs;
 
@@ -130,8 +150,10 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
     let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
       configs.steps_per_epoch = Math.ceil(local_steps_per_epoch) * ct.numProcs();
-      console.warn(
-        `Changing steps per epoch to ${configs.steps_per_epoch} as there are ${ct.numProcs()} processes running`
+      log.warn(
+        `${configs.name} | Changing steps per epoch to ${
+          configs.steps_per_epoch
+        } as there are ${ct.numProcs()} processes running`
       );
       local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     }
@@ -144,8 +166,8 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       size: local_steps_per_epoch,
     });
 
-    if (configs.verbose && ct.id() === 0) {
-      console.log('Beginning training with configs', configs);
+    if (ct.id() === 0) {
+      log.info(configs, `${configs.name} | Beginning training with configs`);
     }
 
     type pi_info = {
@@ -178,22 +200,29 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
 
     const update = async () => {
       const data = await buffer.get();
-      const loss_pi_old = compute_loss_pi(data);
+      const loss_pi_old = compute_loss_pi(data).loss_pi;
+      const loss_vf_old = compute_loss_vf(data);
       let kl = 0;
       let entropy = 0;
+      let loss_pi_new = 0;
+      let loss_vf_new = 0;
+
       for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
-          // TODO: avg KL divergence approximation
           const { loss_pi, pi_info } = compute_loss_pi(data);
           kl = pi_info.approx_kl;
           entropy = pi_info.entropy;
           return loss_pi as tf.Scalar;
         });
-        kl = await ct.avgNumber(kl);
-        entropy = await ct.avgNumber(entropy);
         await ct.averageGradients(pi_grads.grads);
         pi_optimizer.applyGradients(pi_grads.grads);
+        if (i === configs.train_pi_iters - 1) {
+          loss_pi_new = pi_grads.value.arraySync();
+        }
       }
+
+      kl = await ct.avgNumber(kl);
+      entropy = await ct.avgNumber(entropy);
 
       for (let i = 0; i < configs.train_v_iters; i++) {
         const vf_grads = vf_optimizer.computeGradients(() => {
@@ -202,24 +231,24 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         });
         await ct.averageGradients(vf_grads.grads);
         vf_optimizer.applyGradients(vf_grads.grads);
+        if (i === configs.train_pi_iters - 1) {
+          loss_vf_new = vf_grads.value.arraySync();
+        }
       }
-      // TODO
-      // log changes
-      if (ct.id() === 0) {
-        console.log('==============');
-        const loss_pi_new = compute_loss_pi(data);
-        const delta_pi_loss = loss_pi_old.loss_pi.sub(loss_pi_new.loss_pi).arraySync();
-        console.log({ info: loss_pi_new.pi_info, delta_pi_loss });
-      }
+      let delta_pi_loss = loss_pi_new - (loss_pi_old.arraySync() as number);
+      let delta_vf_loss = loss_vf_new - (loss_vf_old.arraySync() as number);
+      delta_pi_loss = await ct.avgNumber(delta_pi_loss);
+      delta_vf_loss = await ct.avgNumber(delta_vf_loss);
+      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss };
+      return metrics;
     };
 
     // const start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
     let o = env.reset();
     let ep_ret = 0;
     let ep_len = 0;
+    let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
-      let avg_rep_ret = 0;
-      let finished_trajectories = 0;
       for (let t = 0; t < local_steps_per_epoch; t++) {
         // TODO
         const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
@@ -248,7 +277,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         const epoch_ended = t === local_steps_per_epoch - 1;
         if (terminal || epoch_ended) {
           if (epoch_ended && !terminal) {
-            console.log(`Warning: trajectory cut off by epoch at ${ep_len} steps`);
+            log.warn(`${configs.name} | Trajectory cut off by epoch at ${ep_len} steps`);
           }
           let v = 0;
           if (timeout || epoch_ended) {
@@ -257,11 +286,9 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
           buffer.finishPath(v);
           if (terminal) {
             // store ep ret and eplen stuff
-            avg_rep_ret += ep_ret;
-            finished_trajectories += 1;
+            ep_rets.push(ep_ret);
           }
           o = env.reset();
-          // console.log({terminal, t, epoch_ended, epoch, ep_len, ep_ret})
           ep_ret = 0;
           ep_len = 0;
         }
@@ -269,22 +296,27 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       // TODO save model
 
       // update actor critic
-      await update();
+      const metrics = await update();
+      const ep_rets_metrics = await ct.statisticsScalar(np.tensorLikeToTensor(ep_rets));
 
-      // log info about the epoch!?
-      avg_rep_ret /= finished_trajectories;
-      avg_rep_ret = await ct.avgNumber(avg_rep_ret);
       if (ct.id() === 0) {
-        console.log({
-          avg_rep_ret,
-          epoch,
-        });
+        const msg = `${configs.name} | Epoch ${epoch} metrics: `;
+        log.info(new Array(msg.length + 1).join('='));
+        log.info(
+          {
+            ...metrics,
+            ep_rets: ep_rets_metrics,
+          },
+          msg
+        );
       }
-
       await configs.epochCallback({
         epoch,
-        avg_rep_ret,
+        ...metrics,
+        ep_rets: ep_rets_metrics,
       });
+
+      ep_rets = [];
     }
   }
 }

@@ -1,3 +1,3 @@
-export {DQN} from './dqn';
-export {VPG} from './vpg';
-export {PPO} from './ppo';
+export { DQN } from './dqn';
+export { VPG } from './vpg';
+export { PPO } from './ppo';

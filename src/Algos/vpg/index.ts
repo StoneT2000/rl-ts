@@ -65,10 +65,11 @@ export interface VPGTrainConfigs {
   name: string;
 }
 type Action = NdArray | number;
-export class VPG<Observation, ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+export class VPG<
   Observation,
-  Action
-> {
+  ObservationSpace extends Space<Observation>,
+  ActionSpace extends Space<Action>
+> extends Agent<Observation, Action> {
   public configs: VPGConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
       // eslint-disable-next-line
@@ -250,7 +251,6 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-
         const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);

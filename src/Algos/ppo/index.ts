@@ -67,10 +67,11 @@ export interface PPOTrainConfigs {
   name: string;
 }
 type Action = NdArray | number;
-export class PPO<Observation, ObservationSpace extends Space<Observation>, ActionSpace extends Space<Action>> extends Agent<
+export class PPO<
   Observation,
-  Action
-> {
+  ObservationSpace extends Space<Observation>,
+  ActionSpace extends Space<Action>
+> extends Agent<Observation, Action> {
   public configs: PPOConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
       // eslint-disable-next-line
@@ -187,23 +188,27 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
 
         const ratio = logp_a!.sub(logp_old).exp();
         const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv);
-        
-        const adv_ratio = ratio.mul(adv)
 
-        const ratio_and_clip_adv = tf.stack([adv_ratio, clip_adv])
+        const adv_ratio = ratio.mul(adv);
+
+        const ratio_and_clip_adv = tf.stack([adv_ratio, clip_adv]);
 
         const loss_pi = ratio_and_clip_adv.min(0).mean().mul(-1);
 
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
         const entropy = pi.entropy().mean().arraySync() as number;
-        const clipped = ratio.greater(1 + clip_ratio).logicalOr(ratio.less(1 - clip_ratio)).mean().arraySync() as number;
+        const clipped = ratio
+          .greater(1 + clip_ratio)
+          .logicalOr(ratio.less(1 - clip_ratio))
+          .mean()
+          .arraySync() as number;
 
         return {
           loss_pi,
           pi_info: {
             approx_kl,
             entropy,
-            clip_frac: clipped
+            clip_frac: clipped,
           },
         };
       });
@@ -231,12 +236,16 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
           kl = pi_info.approx_kl;
           entropy = pi_info.entropy;
           clip_frac = pi_info.clip_frac;
-          
+
           return loss_pi as tf.Scalar;
         });
         kl = await ct.avgNumber(kl);
         if (kl > 1.5 * target_kl) {
-          log.warn(`${configs.name} | Early stopping at step ${i + 1}/${configs.train_pi_iters} of optimizing policy due to reaching max kl`);
+          log.warn(
+            `${configs.name} | Early stopping at step ${i + 1}/${
+              configs.train_pi_iters
+            } of optimizing policy due to reaching max kl`
+          );
           trained_pi_iters = i + 1;
           break;
         }
@@ -277,7 +286,6 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-
         const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);

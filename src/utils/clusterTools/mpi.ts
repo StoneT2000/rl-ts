@@ -59,7 +59,7 @@ export const fork = async (forkCount: number) => {
     _procCount = data[1];
 
     // sync with primary so all processes start together
-    await send({type: MessageType.INIT, data: []}, process);
+    await send({ type: MessageType.INIT, data: [] }, process);
   }
 };
 export const send = async (msg: Message, worker: cluster.Worker | NodeJS.Process): Promise<void> => {

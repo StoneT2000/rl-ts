@@ -143,9 +143,9 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
       targetUpdateFreq: 10,
       ckptFreq: 1000,
       totalEpisodes: 200,
-      verbosity: "info",
+      verbosity: 'info',
       batchSize: 32,
-      name: "DQN_Train",
+      name: 'DQN_Train',
       stepCallback: () => {},
       epochCallback: () => {},
     };
@@ -194,7 +194,9 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
           // save policy and target net models.
           const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
           const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
-          log.info(`${configs.name} | Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
+          log.info(
+            `${configs.name} | Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`
+          );
           this.policyNet.save(policyNetSavePath);
           this.targetNet.save(targetNetSavePath);
         }

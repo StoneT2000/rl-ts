@@ -14,13 +14,16 @@ import * as np from 'rl-ts/lib/utils/np';
  * Compute various statistics of a registered variable
  */
 // TODO: This can be optimized significantly. There is a lot of waiting here...
-export const statisticsScalar = async (x: tf.Tensor, exclude: {
-  mean?: boolean,
-  std?: boolean,
-  max?: boolean,
-  min?: boolean,
-} = {}, asTensor = false) => {
-
+export const statisticsScalar = async (
+  x: tf.Tensor,
+  exclude: {
+    mean?: boolean;
+    std?: boolean;
+    max?: boolean;
+    min?: boolean;
+  } = {},
+  asTensor = false
+) => {
   let maxv;
   if (!exclude.max) {
     maxv = await max(x.max());
@@ -37,7 +40,7 @@ export const statisticsScalar = async (x: tf.Tensor, exclude: {
     global_sum = await sum(x.sum());
     global_n = await sumNumber(x.shape[0]);
     mean = global_sum.div(global_n);
-  
+
     if (!exclude.std) {
       const global_sum_sq = await sum(x.sub(mean).pow(2).sum());
       std = global_sum_sq.div(global_n).sqrt();
@@ -48,9 +51,7 @@ export const statisticsScalar = async (x: tf.Tensor, exclude: {
     min: minv,
     mean,
     std,
-  }
-
-  
+  };
 
   if (asTensor) {
     return data;
@@ -82,10 +83,9 @@ const handleOp = async (x: tf.Tensor, rest: tf.Tensor, op: OPS) => {
     case OPS.GATHER:
       return x.concat(rest);
     case OPS.MAX:
-      return x.max().concat(rest.max()).max()
+      return x.max().concat(rest.max()).max();
     case OPS.MIN:
-      return x.min().concat(rest.min()).min()
-
+      return x.min().concat(rest.min()).min();
   }
 };
 

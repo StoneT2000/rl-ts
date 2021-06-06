@@ -41,9 +41,9 @@ export interface VPGTrainConfigs {
     delta_pi_loss: number;
     delta_vf_loss: number;
     ep_rets: {
-      mean: number,
-      std: number,
-    }
+      mean: number;
+      std: number;
+    };
   }): any;
   pi_optimizer: tf.Optimizer;
   vf_optimizer: tf.Optimizer;
@@ -128,7 +128,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       lam: 0.97,
       seed: 0,
       train_pi_iters: 1,
-      verbosity: "info",
+      verbosity: 'info',
       name: 'VPG_Train',
       stepCallback: () => {},
       epochCallback: () => {},
@@ -305,7 +305,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         log.info(
           {
             ...metrics,
-            ep_rets: ep_rets_metrics
+            ep_rets: ep_rets_metrics,
           },
           msg
         );
@@ -313,7 +313,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       await configs.epochCallback({
         epoch,
         ...metrics,
-        ep_rets: ep_rets_metrics
+        ep_rets: ep_rets_metrics,
       });
 
       ep_rets = [];

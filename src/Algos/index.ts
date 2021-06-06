@@ -1,6 +1,3 @@
-import { DQN } from './dqn';
-import { VPG } from './vpg';
-export const Algos = {
-  DQN,
-  VPG,
-};
+export {DQN} from './dqn';
+export {VPG} from './vpg';
+export {PPO} from './ppo';

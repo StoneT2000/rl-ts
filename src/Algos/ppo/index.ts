@@ -56,6 +56,8 @@ export interface PPOTrainConfigs {
   verbosity: string;
   gamma: number;
   lam: number;
+  target_kl: number;
+  clip_ratio: number;
   train_v_iters: number;
   train_pi_iters: number;
   steps_per_epoch: number;
@@ -125,8 +127,10 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
       train_v_iters: 80,
       gamma: 0.99,
       lam: 0.97,
+      clip_ratio: 0.2,
       seed: 0,
       train_pi_iters: 1,
+      target_kl: 0.01,
       verbosity: 'info',
       name: 'PPO_Train',
       stepCallback: () => {},
@@ -135,7 +139,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
     configs = deepMerge(configs, trainConfigs);
     log.level = configs.verbosity;
 
-    const { vf_optimizer, pi_optimizer } = configs;
+    const { clip_ratio, vf_optimizer, pi_optimizer, target_kl } = configs;
 
     // TODO do some seeding things
     configs.seed += 99999 * ct.id();
@@ -172,22 +176,30 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
     type pi_info = {
       approx_kl: number;
       entropy: number;
+      clip_frac: any;
     };
     const compute_loss_pi = (data: PPOBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
-        // pi, logp_a, logp_old are all of shape [B]
-        const loss_pi = logp_a!.mul(adv).mean().mul(-1);
+
+        const ratio = logp_a!.sub(logp_old).exp();
+        const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv);
+
+
+        const loss_pi = tf.min(ratio.mul(adv).min().concat(clip_adv.min())).mean().mul(-1);
 
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
         const entropy = pi.entropy().mean().arraySync() as number;
+        const clipped = ratio.greater(1 + clip_ratio).logicalOr(ratio.less(1 - clip_ratio));
+
         return {
           loss_pi,
           pi_info: {
             approx_kl,
             entropy,
+            clip_frac: clipped
           },
         };
       });
@@ -203,16 +215,26 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
       const loss_vf_old = compute_loss_vf(data);
       let kl = 0;
       let entropy = 0;
+      let clip_frac = 0;
       let loss_pi_new = 0;
       let loss_vf_new = 0;
+
+      let trained_pi_iters = configs.train_pi_iters;
 
       for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
           const { loss_pi, pi_info } = compute_loss_pi(data);
           kl = pi_info.approx_kl;
           entropy = pi_info.entropy;
+          clip_frac = pi_info.clip_frac;
           return loss_pi as tf.Scalar;
         });
+        kl = await ct.avgNumber(kl);
+        if (kl > 1.5 * target_kl) {
+          log.warn(`${configs.name} | Early stopping at step ${i} of optimizing policy due to reaching max kl`);
+          trained_pi_iters = i + 1;
+          break;
+        }
         await ct.averageGradients(pi_grads.grads);
         pi_optimizer.applyGradients(pi_grads.grads);
         if (i === configs.train_pi_iters - 1) {
@@ -220,7 +242,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
         }
       }
 
-      kl = await ct.avgNumber(kl);
+      clip_frac = await ct.avgNumber(clip_frac);
       entropy = await ct.avgNumber(entropy);
 
       for (let i = 0; i < configs.train_v_iters; i++) {
@@ -238,7 +260,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
       let delta_vf_loss = loss_vf_new - (loss_vf_old.arraySync() as number);
       delta_pi_loss = await ct.avgNumber(delta_pi_loss);
       delta_vf_loss = await ct.avgNumber(delta_vf_loss);
-      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss };
+      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss, clip_frac, trained_pi_iters };
       return metrics;
     };
 
@@ -249,7 +271,7 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-        // TODO
+
         const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);
@@ -260,7 +282,6 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
         ep_ret += r;
         ep_len += 1;
 
-        // TODO, log vvals
         buffer.store(
           np.unsqueeze(np.tensorLikeToNdArray(this.obsToTensor(o)), 0),
           np.tensorLikeToNdArray(a),

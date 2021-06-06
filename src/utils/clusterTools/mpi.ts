@@ -44,9 +44,10 @@ export const fork = async (forkCount: number) => {
     for (const worker of workers) {
       workerInitSignals.push(send({ type: MessageType.INIT, data: [worker.id, forkCount + 1] }, worker));
     }
-    await Promise.all(workers);
     _procCount = forkCount + 1;
     _id = 0;
+    // sync with workers so all processes start together
+    await receiveAll();
   } else {
     messageBuffer[0] = [];
     process.on('message', (m) => {
@@ -55,8 +56,10 @@ export const fork = async (forkCount: number) => {
     // wait for message
     const data = (await receive()).data! as number[];
     _id = data[0];
-    
     _procCount = data[1];
+
+    // sync with primary so all processes start together
+    await send({type: MessageType.INIT, data: []}, process);
   }
 };
 export const send = async (msg: Message, worker: cluster.Worker | NodeJS.Process): Promise<void> => {

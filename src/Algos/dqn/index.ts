@@ -10,6 +10,7 @@ import * as np from 'rl-ts/lib/utils/np';
 import { Scalar } from '@tensorflow/tfjs';
 import { NdArray } from 'numjs';
 import pino from 'pino';
+import * as ct from 'rl-ts/lib/utils/clusterTools';
 const log = pino({
   prettyPrint: {
     colorize: true,
@@ -59,7 +60,7 @@ export interface DQNTrainConfigs<Observation, Action> {
   saveLocation?: TFSaveLocations;
   learningStarts: number;
   totalEpisodes: number;
-  verbose: boolean;
+  verbosity: string;
   batchSize: number;
 }
 type Observation = NdArray;
@@ -142,17 +143,18 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
       targetUpdateFreq: 10,
       ckptFreq: 1000,
       totalEpisodes: 200,
-      verbose: false,
+      verbosity: "info",
       batchSize: 32,
       name: "DQN_Train",
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
-
-    if (configs.verbose) {
+    log.level = configs.verbosity;
+    if (ct.id() === 0) {
       log.info(configs, `${configs.name} | Beginning training with configs`);
     }
+
     const { optimizer, gamma } = configs;
     let state = this.env.reset();
     const episodeDurations = [0];
@@ -187,14 +189,12 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
           optimizer,
         });
       }
-      if (configs.savePath && configs.saveLocation) {
+      if (configs.savePath && configs.saveLocation && ct.id() === 0) {
         if (t >= configs.learningStarts && t % configs.ckptFreq === 0) {
           // save policy and target net models.
           const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
           const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
-          if (configs.verbose) {
-            log.info(`${configs.name} Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
-          }
+          log.info(`${configs.name} | Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
           this.policyNet.save(policyNetSavePath);
           this.targetNet.save(targetNetSavePath);
         }

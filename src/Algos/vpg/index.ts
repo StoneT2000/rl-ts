@@ -53,7 +53,7 @@ export interface VPGTrainConfigs {
   savePath?: string;
   saveLocation?: TFSaveLocations;
   epochs: number;
-  verbose: boolean;
+  verbosity: string;
   gamma: number;
   lam: number;
   train_v_iters: number;
@@ -120,7 +120,6 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       vf_optimizer: tf.train.adam(1e-3),
       pi_optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
-      verbose: false,
       steps_per_epoch: 10000,
       max_ep_len: 1000,
       epochs: 50,
@@ -129,11 +128,13 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       lam: 0.97,
       seed: 0,
       train_pi_iters: 1,
+      verbosity: "info",
       name: 'VPG_Train',
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
+    log.level = configs.verbosity;
 
     const { vf_optimizer, pi_optimizer } = configs;
 
@@ -165,7 +166,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       size: local_steps_per_epoch,
     });
 
-    if (configs.verbose && ct.id() === 0) {
+    if (ct.id() === 0) {
       log.info(configs, `${configs.name} | Beginning training with configs`);
     }
 
@@ -276,7 +277,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         const epoch_ended = t === local_steps_per_epoch - 1;
         if (terminal || epoch_ended) {
           if (epoch_ended && !terminal) {
-            console.log(`Warning: trajectory cut off by epoch at ${ep_len} steps`);
+            log.warn(`${configs.name} | Trajectory cut off by epoch at ${ep_len} steps`);
           }
           let v = 0;
           if (timeout || epoch_ended) {
@@ -299,7 +300,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       const ep_rets_metrics = await ct.statisticsScalar(np.tensorLikeToTensor(ep_rets));
 
       if (ct.id() === 0) {
-        const msg = `${configs.name} - Epoch ${epoch} metrics: `;
+        const msg = `${configs.name} | Epoch ${epoch} metrics: `;
         log.info(new Array(msg.length + 1).join('='));
         log.info(
           {

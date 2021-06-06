@@ -297,8 +297,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
 
       // update actor critic
       const metrics = await update();
-
-      const ep_rets_metrics = await ct.statisticsScalar(np.tensorLikeToTensor(ep_rets), false);
+      const ep_rets_metrics = await ct.statisticsScalar(np.tensorLikeToTensor(ep_rets));
 
       if (ct.id() === 0) {
         const msg = `${configs.name} - Epoch ${epoch} metrics: `;
@@ -306,10 +305,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
         log.info(
           {
             ...metrics,
-            ep_rets: {
-              mean: ep_rets_metrics.mean,
-              std: ep_rets_metrics.std,
-            },
+            ep_rets: ep_rets_metrics
           },
           msg
         );
@@ -317,10 +313,7 @@ export class VPG<ObservationSpace extends Space<Observation>, ActionSpace extend
       await configs.epochCallback({
         epoch,
         ...metrics,
-        ep_rets: {
-          mean: ep_rets_metrics.mean as number,
-          std: ep_rets_metrics.std as number,
-        },
+        ep_rets: ep_rets_metrics
       });
 
       ep_rets = [];

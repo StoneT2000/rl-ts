@@ -13,22 +13,61 @@ import * as np from 'rl-ts/lib/utils/np';
 /**
  * Compute various statistics of a registered variable
  */
-export const statisticsScalar = async (x: tf.Tensor, asTensor = true) => {
-  const global_sum = await sum(x.sum());
-  const global_n = await sumNumber(x.shape[0]);
-  const mean = global_sum.div(global_n);
-  const global_sum_sq = await sum(x.sub(mean).pow(2).sum());
-  const std = global_sum_sq.div(global_n).sqrt();
-  if (asTensor) {
-    return {
-      mean,
-      std,
-    };
+// TODO: This can be optimized significantly. There is a lot of waiting here...
+export const statisticsScalar = async (x: tf.Tensor, exclude: {
+  mean?: boolean,
+  std?: boolean,
+  max?: boolean,
+  min?: boolean,
+} = {}, asTensor = false) => {
+
+  let maxv;
+  if (!exclude.max) {
+    maxv = await max(x.max());
   }
-  return {
-    mean: np.tensorLikeToJSArray(mean),
-    std: np.tensorLikeToJSArray(std),
-  };
+  let minv;
+  if (!exclude.max) {
+    minv = await min(x.min());
+  }
+  let global_sum;
+  let global_n;
+  let mean;
+  let std;
+  if (!exclude.mean || !exclude.std) {
+    global_sum = await sum(x.sum());
+    global_n = await sumNumber(x.shape[0]);
+    mean = global_sum.div(global_n);
+  
+    if (!exclude.std) {
+      const global_sum_sq = await sum(x.sub(mean).pow(2).sum());
+      std = global_sum_sq.div(global_n).sqrt();
+    }
+  }
+  const data: any = {
+    max: maxv,
+    min: minv,
+    mean,
+    std,
+  }
+
+  
+
+  if (asTensor) {
+    return data;
+  }
+  if (data.mean) {
+    data.mean = np.tensorLikeToJSArray(data.mean);
+  }
+  if (data.std) {
+    data.std = np.tensorLikeToJSArray(data.std);
+  }
+  if (data.min) {
+    data.min = np.tensorLikeToJSArray(data.min);
+  }
+  if (data.max) {
+    data.max = np.tensorLikeToJSArray(data.max);
+  }
+  return data;
 };
 
 /**
@@ -42,6 +81,11 @@ const handleOp = async (x: tf.Tensor, rest: tf.Tensor, op: OPS) => {
       return x.add(rest.sum(0));
     case OPS.GATHER:
       return x.concat(rest);
+    case OPS.MAX:
+      return x.max().concat(rest.max()).max()
+    case OPS.MIN:
+      return x.min().concat(rest.min()).min()
+
   }
 };
 
@@ -122,6 +166,16 @@ export const allreduceNumber = async (x: number, op: OPS) => {
     await mpi.send({ type: mpi.MessageType.SEND, data: x }, process);
     return (await mpi.receive()).data as number;
   }
+};
+
+export const max = async (x: tf.Tensor) => {
+  if (mpi.numProcs() === 1) return x;
+  return allreduce(x, OPS.MAX);
+};
+
+export const min = async (x: tf.Tensor) => {
+  if (mpi.numProcs() === 1) return x;
+  return allreduce(x, OPS.MIN);
 };
 
 export const sum = async (x: tf.Tensor) => {

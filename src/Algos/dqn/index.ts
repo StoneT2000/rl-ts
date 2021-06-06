@@ -9,6 +9,12 @@ import { deepMerge } from 'rl-ts/lib/utils/deep';
 import * as np from 'rl-ts/lib/utils/np';
 import { Scalar } from '@tensorflow/tfjs';
 import { NdArray } from 'numjs';
+import pino from 'pino';
+const log = pino({
+  prettyPrint: {
+    colorize: true,
+  },
+});
 
 export interface DQNConfigs<Observation, Action> {
   replayBufferCapacity: number;
@@ -44,6 +50,7 @@ export interface DQNTrainConfigs<Observation, Action> {
   epsEnd: number;
   epsDecay: number;
   policyTrainFreq: number;
+  name: string;
   targetUpdateFreq: number;
   /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
   ckptFreq: number;
@@ -137,13 +144,14 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
       totalEpisodes: 200,
       verbose: false,
       batchSize: 32,
+      name: "DQN_Train",
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
 
     if (configs.verbose) {
-      console.log('Beginning training with configs', configs);
+      log.info(configs, `${configs.name} | Beginning training with configs`);
     }
     const { optimizer, gamma } = configs;
     let state = this.env.reset();
@@ -185,7 +193,7 @@ export class DQN<ObservationSpace extends Space<Observation>, ActionSpace extend
           const policyNetSavePath = `${configs.saveLocation}://${configs.savePath}/policynet-${t}`;
           const targetNetSavePath = `${configs.saveLocation}://${configs.savePath}/targetnet-${t}`;
           if (configs.verbose) {
-            console.log(`Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
+            log.info(`${configs.name} Saving policy and target networks to ${policyNetSavePath} and ${targetNetSavePath}`);
           }
           this.policyNet.save(policyNetSavePath);
           this.targetNet.save(targetNetSavePath);

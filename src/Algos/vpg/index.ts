@@ -10,7 +10,6 @@ import * as np from 'rl-ts/lib/utils/np';
 import * as ct from 'rl-ts/lib/utils/clusterTools';
 import { NdArray } from 'numjs';
 import { ActorCritic } from 'rl-ts/lib/Models/ac';
-// import * as from 'pino-pretty';
 import pino from 'pino';
 const log = pino({
   prettyPrint: {

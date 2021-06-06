@@ -21,5 +21,5 @@ describe('Test PPO', () => {
       train_pi_iters: 10,
       train_v_iters: 80,
     });
-  }).slow(2000);
+  }).slow(20000);
 });

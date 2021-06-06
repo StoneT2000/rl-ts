@@ -300,7 +300,6 @@ export class VPG<Observation, ObservationSpace extends Space<Observation>, Actio
 
       if (ct.id() === 0) {
         const msg = `${configs.name} | Epoch ${epoch} metrics: `;
-        log.info(new Array(msg.length + 1).join('='));
         log.info(
           {
             ...metrics,

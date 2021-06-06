@@ -187,13 +187,16 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
 
         const ratio = logp_a!.sub(logp_old).exp();
         const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv);
+        
+        const adv_ratio = ratio.mul(adv)
 
+        const ratio_and_clip_adv = tf.stack([adv_ratio, clip_adv])
 
-        const loss_pi = tf.min(ratio.mul(adv).min().concat(clip_adv.min())).mean().mul(-1);
+        const loss_pi = ratio_and_clip_adv.min(0).mean().mul(-1);
 
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
         const entropy = pi.entropy().mean().arraySync() as number;
-        const clipped = ratio.greater(1 + clip_ratio).logicalOr(ratio.less(1 - clip_ratio));
+        const clipped = ratio.greater(1 + clip_ratio).logicalOr(ratio.less(1 - clip_ratio)).mean().arraySync() as number;
 
         return {
           loss_pi,
@@ -228,15 +231,17 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
           kl = pi_info.approx_kl;
           entropy = pi_info.entropy;
           clip_frac = pi_info.clip_frac;
+          
           return loss_pi as tf.Scalar;
         });
         kl = await ct.avgNumber(kl);
         if (kl > 1.5 * target_kl) {
-          log.warn(`${configs.name} | Early stopping at step ${i} of optimizing policy due to reaching max kl`);
+          log.warn(`${configs.name} | Early stopping at step ${i + 1}/${configs.train_pi_iters} of optimizing policy due to reaching max kl`);
           trained_pi_iters = i + 1;
           break;
         }
         await ct.averageGradients(pi_grads.grads);
+
         pi_optimizer.applyGradients(pi_grads.grads);
         if (i === configs.train_pi_iters - 1) {
           loss_pi_new = pi_grads.value.arraySync();
@@ -322,7 +327,6 @@ export class PPO<Observation, ObservationSpace extends Space<Observation>, Actio
 
       if (ct.id() === 0) {
         const msg = `${configs.name} | Epoch ${epoch} metrics: `;
-        log.info(new Array(msg.length + 1).join('='));
         log.info(
           {
             ...metrics,

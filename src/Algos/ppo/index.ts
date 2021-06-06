@@ -3,7 +3,7 @@ import { Environment } from 'rl-ts/lib/Environments';
 import { Space } from 'rl-ts/lib/Spaces';
 import * as random from 'rl-ts/lib/utils/random';
 import * as tf from '@tensorflow/tfjs';
-import { VPGBuffer, VPGBufferComputations } from 'rl-ts/lib/Algos/vpg/buffer';
+import { PPOBuffer, PPOBufferComputations } from 'rl-ts/lib/Algos/ppo/buffer';
 import { DeepPartial } from 'rl-ts/lib/utils/types';
 import { deepMerge } from 'rl-ts/lib/utils/deep';
 import * as np from 'rl-ts/lib/utils/np';
@@ -17,7 +17,7 @@ const log = pino({
   },
 });
 
-export interface VPGConfigs<Observation, Action> {
+export interface PPOConfigs<Observation, Action> {
   /** Converts observations to batchable tensors of shape [1, ...observation shape] */
   obsToTensor: (state: Observation) => tf.Tensor;
   /** Converts actor critic output tensor to tensor that works with environment. Necessary if in discrete action space! */
@@ -25,7 +25,7 @@ export interface VPGConfigs<Observation, Action> {
   /** Optional act function to replace the default act */
   act?: (obs: Observation) => Action;
 }
-export interface VPGTrainConfigs {
+export interface PPOTrainConfigs {
   stepCallback(stepData: {
     step: number;
     episodeDurations: number[];
@@ -56,6 +56,8 @@ export interface VPGTrainConfigs {
   verbosity: string;
   gamma: number;
   lam: number;
+  target_kl: number;
+  clip_ratio: number;
   train_v_iters: number;
   train_pi_iters: number;
   steps_per_epoch: number;
@@ -65,12 +67,12 @@ export interface VPGTrainConfigs {
   name: string;
 }
 type Action = NdArray | number;
-export class VPG<
+export class PPO<
   Observation,
   ObservationSpace extends Space<Observation>,
   ActionSpace extends Space<Action>
 > extends Agent<Observation, Action> {
-  public configs: VPGConfigs<Observation, Action> = {
+  public configs: PPOConfigs<Observation, Action> = {
     obsToTensor: (obs: Observation) => {
       // eslint-disable-next-line
       // @ts-ignore - let this throw an error, which can happen if observation space is dict. if observation space is dict, user needs to override this.
@@ -95,8 +97,8 @@ export class VPG<
     public makeEnv: () => Environment<ObservationSpace, ActionSpace, Observation, any, Action, number>,
     /** The actor crtic model */
     public ac: ActorCritic<tf.Tensor>,
-    /** configs for the VPG model */
-    configs: DeepPartial<VPGConfigs<Observation, Action>> = {}
+    /** configs for the PPO model */
+    configs: DeepPartial<PPOConfigs<Observation, Action>> = {}
   ) {
     super();
     this.configs = deepMerge(this.configs, configs);
@@ -116,8 +118,8 @@ export class VPG<
     return np.tensorLikeToNdArray(this.actionToTensor(this.ac.act(this.obsToTensor(observation))));
   }
 
-  public async train(trainConfigs: Partial<VPGTrainConfigs>) {
-    let configs: VPGTrainConfigs = {
+  public async train(trainConfigs: Partial<PPOTrainConfigs>) {
+    let configs: PPOTrainConfigs = {
       vf_optimizer: tf.train.adam(1e-3),
       pi_optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
@@ -127,17 +129,19 @@ export class VPG<
       train_v_iters: 80,
       gamma: 0.99,
       lam: 0.97,
+      clip_ratio: 0.2,
       seed: 0,
       train_pi_iters: 1,
+      target_kl: 0.01,
       verbosity: 'info',
-      name: 'VPG_Train',
+      name: 'PPO_Train',
       stepCallback: () => {},
       epochCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
     log.level = configs.verbosity;
 
-    const { vf_optimizer, pi_optimizer } = configs;
+    const { clip_ratio, vf_optimizer, pi_optimizer, target_kl } = configs;
 
     // TODO do some seeding things
     configs.seed += 99999 * ct.id();
@@ -159,7 +163,7 @@ export class VPG<
       local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     }
 
-    const buffer = new VPGBuffer({
+    const buffer = new PPOBuffer({
       gamma: configs.gamma,
       lam: configs.lam,
       actDim: act_dim,
@@ -174,27 +178,42 @@ export class VPG<
     type pi_info = {
       approx_kl: number;
       entropy: number;
+      clip_frac: any;
     };
-    const compute_loss_pi = (data: VPGBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
+    const compute_loss_pi = (data: PPOBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
       const logp_old = data.logp;
       return tf.tidy(() => {
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
-        // pi, logp_a, logp_old are all of shape [B]
-        const loss_pi = logp_a!.mul(adv).mean().mul(-1);
+
+        const ratio = logp_a!.sub(logp_old).exp();
+        const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv);
+
+        const adv_ratio = ratio.mul(adv);
+
+        const ratio_and_clip_adv = tf.stack([adv_ratio, clip_adv]);
+
+        const loss_pi = ratio_and_clip_adv.min(0).mean().mul(-1);
 
         const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
         const entropy = pi.entropy().mean().arraySync() as number;
+        const clipped = ratio
+          .greater(1 + clip_ratio)
+          .logicalOr(ratio.less(1 - clip_ratio))
+          .mean()
+          .arraySync() as number;
+
         return {
           loss_pi,
           pi_info: {
             approx_kl,
             entropy,
+            clip_frac: clipped,
           },
         };
       });
     };
-    const compute_loss_vf = (data: VPGBufferComputations) => {
+    const compute_loss_vf = (data: PPOBufferComputations) => {
       const { obs, ret } = data;
       return this.ac.v.apply(obs).sub(ret).pow(2).mean();
     };
@@ -205,24 +224,40 @@ export class VPG<
       const loss_vf_old = compute_loss_vf(data);
       let kl = 0;
       let entropy = 0;
+      let clip_frac = 0;
       let loss_pi_new = 0;
       let loss_vf_new = 0;
+
+      let trained_pi_iters = configs.train_pi_iters;
 
       for (let i = 0; i < configs.train_pi_iters; i++) {
         const pi_grads = pi_optimizer.computeGradients(() => {
           const { loss_pi, pi_info } = compute_loss_pi(data);
           kl = pi_info.approx_kl;
           entropy = pi_info.entropy;
+          clip_frac = pi_info.clip_frac;
+
           return loss_pi as tf.Scalar;
         });
+        kl = await ct.avgNumber(kl);
+        if (kl > 1.5 * target_kl) {
+          log.warn(
+            `${configs.name} | Early stopping at step ${i + 1}/${
+              configs.train_pi_iters
+            } of optimizing policy due to reaching max kl`
+          );
+          trained_pi_iters = i + 1;
+          break;
+        }
         await ct.averageGradients(pi_grads.grads);
+
         pi_optimizer.applyGradients(pi_grads.grads);
         if (i === configs.train_pi_iters - 1) {
           loss_pi_new = pi_grads.value.arraySync();
         }
       }
 
-      kl = await ct.avgNumber(kl);
+      clip_frac = await ct.avgNumber(clip_frac);
       entropy = await ct.avgNumber(entropy);
 
       for (let i = 0; i < configs.train_v_iters; i++) {
@@ -240,7 +275,7 @@ export class VPG<
       let delta_vf_loss = loss_vf_new - (loss_vf_old.arraySync() as number);
       delta_pi_loss = await ct.avgNumber(delta_pi_loss);
       delta_vf_loss = await ct.avgNumber(delta_vf_loss);
-      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss };
+      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss, clip_frac, trained_pi_iters };
       return metrics;
     };
 

@@ -150,13 +150,6 @@ To build and package the full library for publishing run
 npm run build
 ```
 
-You can also build just the es5 or just the es6 versions of the library via
-```
-npm run build:es5
-npm run build:es6
-```
-
-
 [Mocha](https://mochajs.org/) and [Chai](https://www.chaijs.com/) are the testing frameworks used. To run tests run
 
 ```

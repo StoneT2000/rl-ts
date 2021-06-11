@@ -30,6 +30,10 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
 
   public state: State;
 
+  public maxEpisodeSteps = 100;
+
+  stepsSoFar = 0;
+
   constructor(
     public width: number,
     public height: number,
@@ -63,6 +67,10 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
     if (this.posIsInTargetPositions(this.state.agentPos)) {
       done = true;
     }
+    if (this.stepsSoFar >= this.maxEpisodeSteps && this.maxEpisodeSteps !== -1) {
+      done = true;
+    }
+    this.stepsSoFar += 1;
     return {
       observation: this.getObs(),
       reward,
@@ -98,6 +106,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
     } else {
       this.state = this.genState();
     }
+    this.stepsSoFar = 0;
     return this.getObs();
   }
 

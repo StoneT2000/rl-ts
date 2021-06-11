@@ -9,8 +9,8 @@ describe('Test normal distribution class', () => {
     const sample = normal.sample();
     const data = sample.dataSync();
     for (let i = 0; i < sample.size; i++) {
-      expect(data[i]).to.be.lessThan(i + 1 + 1e-1 * 3);
-      expect(data[i]).to.be.greaterThan(i + 1 - 1e-1 * 3);
+      expect(data[i]).to.be.lessThan(i + 1 + 1e-1 * 4);
+      expect(data[i]).to.be.greaterThan(i + 1 - 1e-1 * 4);
     }
   });
   it('should compute log prob correctly', () => {

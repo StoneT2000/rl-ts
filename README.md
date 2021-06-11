@@ -79,7 +79,7 @@ The key functions of environments are
 - `step(action)`: Step forward in the environment by one timestep. Returns a JS object with fields `reward`, `observation`, `done`, `info`. `done` is a boolean and is true whenever the environment is completed and needs to be reset. `info` is miscellaneous information provided by the environment.
 - `async render(mode, configs)`: Renders a snapshot / frame of the environment at the moment. When setting mode to 'web', a web viewer will be opened so you can watch the frame(s). `configs` is a JS object typically with a `fps` field to control the FPS and may use other fields depending on environment.
 
-Apart from these functions, it's recommended to understand the type of data being transferred in and out of environments (and the algorithms in this repo) as some of the data are numbers, some are NdArrays (js numpy arrays), and some are tensors. See [this](#data-types) for details.
+Apart from these functions, it's recommended to understand the type of data being transferred in and out of environments (and the algorithms in this repo) as some of the data are numbers, some are NdArrays (js numpy arrays), and some are tensors. See [this](#data-types) for details. For more advanced usage of this library, there are some additional subpackages within that are useful such as cluster tools for distributed training and some utility functions for working with NdArrays and tfjs Tensors. See the [wiki page on these subpackages](https://github.com/StoneT2000/rl-ts/wiki/Useful-Sub-Packages) for details
 
 ### Algorithms
 
@@ -101,12 +101,16 @@ const policyIteration = new RL.DP.PolicyIteration(makeEnv, configs); // create a
 At the moment, the following algorithms are implemented:
 
 - Policy Gradient Methods
+  - [PPO](https://github.com/StoneT2000/rl-ts/tree/main/src/Algos/ppo)
   - [VPG](https://github.com/StoneT2000/rl-ts/tree/main/src/Algos/vpg)
+  - TRPO: WIP
 - Q-Learning
   - [DQN](https://github.com/StoneT2000/rl-ts/tree/main/src/Algos/dqn)
+  - Dueling DQN: WIP
 - DP Methods
   - [Policy Evaluation](https://github.com/StoneT2000/rl-ts/tree/main/src/DP)
   - [Policy Iteration](https://github.com/StoneT2000/rl-ts/tree/main/src/DP)
+  - More TBD
 
 Each of the links above take you to the part of the repo with that algorithm and has guides on how to use them.
 
@@ -114,9 +118,9 @@ Each of the links above take you to the part of the repo with that algorithm and
 
 Usage of the library has effectively 2 places of data. Data stored in environments and data stored by the algorithms and models.
 
-Environments provided by this library strictly use plain JS numbers and NdArrays from the [numjs](https://github.com/nicolaspanel/numjs) package. You can treat these like [numpy](https://numpy.org/). Thus, actions sent to environments and observed observations are always NdArrays or numbers. This is done for consistency and also for ease of use as things can get quite complicated when performing many computations on just plain JS arrays. Moreover, this keeps the environments component of this library "ML library agnostic", meaning you don't have to use TensorFlow based models to leverage the environments.
+Environments provided by this library strictly use plain JS numbers and NdArrays from the [numjs](https://github.com/nicolaspanel/numjs) package. You can treat these like [numpy](https://numpy.org/). Thus, actions sent to environments and observed observations are always NdArrays or numbers. This is done for consistency and also for ease of use as things can get quite complicated when performing many computations on just plain JS arrays. Moreover, this keeps the environments component of this library "ML library agnostic," meaning you don't have to use TensorFlow based models to leverage the environments.
 
-As this library is built on top of [TensorFlow.js](https://www.tensorflow.org/js) (tfjs), all algorithms and models will try to always use TensorFlow tensors for anything. The only time they aren't used are for when tfjs doesn't have some feature or interacting with environments. As environments accept and return NdArrays and numbers strictly, baseline algorithms and models will convert tensors to NdArrays whenever possible.
+As this library is built on top of [TensorFlow.js](https://www.tensorflow.org/js) (tfjs), all algorithms and models will try to always use TensorFlow tensors for anything. The only time they aren't used are for when tfjs doesn't have some feature or interacting with environments. As environments accept and return NdArrays and numbers strictly, baseline algorithms and models will convert tensors to and from NdArrays when necessary to interact with environments.
 
 Since there will be a lot of work done with NdArrays, you should install the numjs package via 
 ```

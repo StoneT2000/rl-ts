@@ -20,3 +20,6 @@ saves
 
 # vscode
 .vscode
+
+# venv
+venv

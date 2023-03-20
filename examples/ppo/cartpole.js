@@ -1,5 +1,10 @@
-const tf = require('@tensorflow/tfjs');
+const tf = require('@tensorflow/tfjs-node');
 const RL = require('../../lib');
+
+const RUN = `cart-old`;
+const tfBoardPath = `./logs/${RUN}-${Date.now()}`;
+const summaryWriter = tf.node.summaryFileWriter(tfBoardPath);
+
 const main = async () => {
   // seed for reproducibility
   RL.random.seed(0);
@@ -23,21 +28,23 @@ const main = async () => {
   });
 
   // define a evaluation function to be called at the end of every epoch
-  const epochCallback = async ({ epoch }) => {
-    let obs = env.reset();
-    let rewards = 0;
-    while (true) {
-      const action = ppo.act(obs);
-      const stepInfo = env.step(action);
-      rewards += stepInfo.reward;
-      if (epoch > 10) {
-        // after 10 epochs, start rendering the evaluation onto a web viewer
-        await env.render('web', { fps: 60, episode: epoch });
-      }
-      obs = stepInfo.observation;
-      if (stepInfo.done) break;
-    }
-    console.log(`Episode ${epoch} - Eval Rewards: ${rewards}`);
+  const epochCallback = async ({ epoch, ep_rets, kl }) => {
+    // let obs = env.reset();
+    // let rewards = 0;
+    // while (true) {
+    //   const action = ppo.act(obs);
+    //   const stepInfo = env.step(action);
+    //   rewards += stepInfo.reward;
+    //   if (epoch > 10) {
+    //     // after 10 epochs, start rendering the evaluation onto a web viewer
+    //     await env.render('web', { fps: 60, episode: epoch });
+    //   }
+    //   obs = stepInfo.observation;
+    //   if (stepInfo.done) break;
+    // }
+    // console.log(`Episode ${epoch} - Eval Rewards: ${rewards}`);
+    summaryWriter.scalar('kl', kl, epoch * 1000);
+    summaryWriter.scalar('reward', ep_rets.mean, epoch * 1000);
   };
 
   // Uncomment the 2 lines below to train on 2 CPUs. Will train on forkCount + 1 cpus.

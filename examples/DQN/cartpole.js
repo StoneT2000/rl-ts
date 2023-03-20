@@ -1,5 +1,5 @@
 const tf = require('@tensorflow/tfjs');
-const RL = require('rl-ts');
+const RL = require('../../lib');
 const main = async () => {
   // seed for reproducibility
   RL.random.seed(0);

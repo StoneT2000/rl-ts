@@ -11,6 +11,7 @@ import * as ct from 'rl-ts/lib/utils/clusterTools';
 import { NdArray } from 'numjs';
 import { ActorCritic } from 'rl-ts/lib/Models/ac';
 import pino from 'pino';
+import nj from 'numjs';
 const log = pino({
   prettyPrint: {
     colorize: true,
@@ -34,33 +35,31 @@ export interface PPOTrainConfigs {
     info: any;
     loss: number | null;
   }): any;
-  epochCallback(epochDate: {
-    epoch: number;
+  iterationCallback(iterationData: {
+    iteration: number;
     kl: number;
     entropy: number;
-    delta_pi_loss: number;
-    delta_vf_loss: number;
     ep_rets: {
       mean: number;
       std: number;
     };
   }): any;
-  pi_optimizer: tf.Optimizer;
-  vf_optimizer: tf.Optimizer;
+  optimizer: tf.Optimizer;
   /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
   ckptFreq: number;
   /** path to store saved models in. */
   savePath?: string;
   saveLocation?: TFSaveLocations;
-  epochs: number;
+  iterations: number;
+  n_epochs: number;
+  batch_size: number;
+  vf_coef: number;
   verbosity: string;
   gamma: number;
   lam: number;
   target_kl: number;
   clip_ratio: number;
-  train_v_iters: number;
-  train_pi_iters: number;
-  steps_per_epoch: number;
+  steps_per_iteration: number;
   /** maximum length of each trajectory collected */
   max_ep_len: number;
   seed: number;
@@ -120,28 +119,28 @@ export class PPO<
 
   public async train(trainConfigs: Partial<PPOTrainConfigs>) {
     let configs: PPOTrainConfigs = {
-      vf_optimizer: tf.train.adam(1e-3),
-      pi_optimizer: tf.train.adam(3e-4),
+      optimizer: tf.train.adam(3e-4),
       ckptFreq: 1000,
-      steps_per_epoch: 10000,
+      steps_per_iteration: 10000,
       max_ep_len: 1000,
-      epochs: 50,
-      train_v_iters: 80,
+      iterations: 50,
+      n_epochs: 10,
+      batch_size: 64,
+      vf_coef: 0.5,
       gamma: 0.99,
       lam: 0.97,
       clip_ratio: 0.2,
       seed: 0,
-      train_pi_iters: 1,
       target_kl: 0.01,
       verbosity: 'info',
       name: 'PPO_Train',
       stepCallback: () => {},
-      epochCallback: () => {},
+      iterationCallback: () => {},
     };
     configs = deepMerge(configs, trainConfigs);
     log.level = configs.verbosity;
 
-    const { clip_ratio, vf_optimizer, pi_optimizer, target_kl } = configs;
+    const { clip_ratio, optimizer, target_kl } = configs;
 
     // TODO do some seeding things
     configs.seed += 99999 * ct.id();
@@ -156,15 +155,15 @@ export class PPO<
       act_dim = [1];
     }
 
-    let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+    let local_steps_per_epoch = configs.steps_per_iteration / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
-      configs.steps_per_epoch = Math.ceil(local_steps_per_epoch) * ct.numProcs();
+      configs.steps_per_iteration = Math.ceil(local_steps_per_epoch) * ct.numProcs();
       log.warn(
         `${configs.name} | Changing steps per epoch to ${
-          configs.steps_per_epoch
+          configs.steps_per_iteration
         } as there are ${ct.numProcs()} processes running`
       );
-      local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
+      local_steps_per_epoch = configs.steps_per_iteration / ct.numProcs();
     }
 
     const buffer = new PPOBuffer({
@@ -224,62 +223,83 @@ export class PPO<
 
     const update = async () => {
       const data = await buffer.get();
-      const loss_pi_old = compute_loss_pi(data).loss_pi;
-      const loss_vf_old = compute_loss_vf(data);
-      let kl = 0;
+      const totalSize = configs.steps_per_iteration;
+      const batchSize = configs.batch_size;
+
+      let kls: number[] = [];
       let entropy = 0;
       let clip_frac = 0;
-      let loss_pi_new = 0;
-      let loss_vf_new = 0;
 
-      let trained_pi_iters = configs.train_pi_iters;
+      let trained_pi_iters = 0;
 
-      for (let i = 0; i < configs.train_pi_iters; i++) {
-        const pi_grads = pi_optimizer.computeGradients(() => {
-          const { loss_pi, pi_info } = compute_loss_pi(data);
-          kl = pi_info.approx_kl;
-          entropy = pi_info.entropy;
-          clip_frac = pi_info.clip_frac;
+      let continueTraining = true;
 
-          return loss_pi as tf.Scalar;
-        });
-        kl = await ct.avgNumber(kl);
-        if (kl > 1.5 * target_kl) {
-          log.warn(
-            `${configs.name} | Early stopping at step ${i + 1}/${
-              configs.train_pi_iters
-            } of optimizing policy due to reaching max kl`
-          );
-          trained_pi_iters = i + 1;
+      for (let epoch = 0; epoch < configs.n_epochs; epoch++) {
+        let batchStartIndex = 0;
+        let batch = 0;
+        let maxBatch = Math.floor(totalSize / batchSize);
+        const indices = tf.tensor1d(Array.from(tf.util.createShuffledIndices(totalSize)), 'int32');
+        while (batch < maxBatch) {
+          const batchData = {
+            obs: data.obs.gather(indices.slice(batchStartIndex, batchSize)),
+            act: data.act.gather(indices.slice(batchStartIndex, batchSize)),
+            adv: data.adv.gather(indices.slice(batchStartIndex, batchSize)),
+            ret: data.ret.gather(indices.slice(batchStartIndex, batchSize)),
+            logp: data.logp.gather(indices.slice(batchStartIndex, batchSize)),
+          };
+
+          // normalization adv
+          const stats = {
+            mean: batchData.adv.mean(),
+            std: nj.std(batchData.adv.arraySync()),
+          };
+          batchData.adv = batchData.adv.sub(stats.mean).div(stats.std + 1e-8);
+
+          batchStartIndex += batchSize;
+
+          const grads = optimizer.computeGradients(() => {
+            const { loss_pi, pi_info } = compute_loss_pi(batchData);
+            kls.push(pi_info.approx_kl);
+            entropy = pi_info.entropy;
+            clip_frac = pi_info.clip_frac;
+
+            const loss_v = compute_loss_vf(batchData);
+            return loss_pi.add(loss_v.mul(configs.vf_coef)) as tf.Scalar;
+          });
+          if (kls[kls.length - 1] > 1.5 * target_kl) {
+            log.warn(
+              `${configs.name} | Early stopping at epoch ${epoch} batch ${batch}/${Math.floor(
+                totalSize / batchSize
+              )} of optimizing policy due to reaching max kl ${kls[kls.length - 1]} / ${1.5 * target_kl}`
+            );
+            continueTraining = false;
+            break;
+          }
+
+          const maxNorm = 0.5;
+          const clippedGrads: tf.NamedTensorMap = {};
+          const totalNorm = tf.norm(tf.stack(Object.values(grads.grads).map((grad) => tf.norm(grad))));
+          const clipCoeff = tf.minimum(tf.scalar(1.0), tf.scalar(maxNorm).div(totalNorm.add(1e-6)));
+          Object.keys(grads.grads).forEach((name) => {
+            clippedGrads[name] = tf.mul(grads.grads[name], clipCoeff);
+          });
+
+          optimizer.applyGradients(clippedGrads);
+          batch++;
+        }
+        trained_pi_iters++;
+        if (!continueTraining) {
           break;
         }
-        await ct.averageGradients(pi_grads.grads);
-
-        pi_optimizer.applyGradients(pi_grads.grads);
-        if (i === configs.train_pi_iters - 1) {
-          loss_pi_new = pi_grads.value.arraySync();
-        }
       }
 
-      clip_frac = await ct.avgNumber(clip_frac);
-      entropy = await ct.avgNumber(entropy);
+      const metrics = {
+        kl: nj.mean(nj.array(kls)),
+        entropy,
+        clip_frac,
+        trained_pi_iters,
+      };
 
-      for (let i = 0; i < configs.train_v_iters; i++) {
-        const vf_grads = vf_optimizer.computeGradients(() => {
-          const loss_v = compute_loss_vf(data);
-          return loss_v as tf.Scalar;
-        });
-        await ct.averageGradients(vf_grads.grads);
-        vf_optimizer.applyGradients(vf_grads.grads);
-        if (i === configs.train_pi_iters - 1) {
-          loss_vf_new = vf_grads.value.arraySync();
-        }
-      }
-      let delta_pi_loss = loss_pi_new - (loss_pi_old.arraySync() as number);
-      let delta_vf_loss = loss_vf_new - (loss_vf_old.arraySync() as number);
-      delta_pi_loss = await ct.avgNumber(delta_pi_loss);
-      delta_vf_loss = await ct.avgNumber(delta_vf_loss);
-      const metrics = { kl, entropy, delta_pi_loss, delta_vf_loss, clip_frac, trained_pi_iters };
       return metrics;
     };
 
@@ -288,7 +308,7 @@ export class PPO<
     let ep_ret = 0;
     let ep_len = 0;
     let ep_rets = [];
-    for (let epoch = 0; epoch < configs.epochs; epoch++) {
+    for (let epoch = 0; epoch < configs.iterations; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
         let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
@@ -325,7 +345,7 @@ export class PPO<
           if (timeout || epoch_ended) {
             v = (this.ac.step(this.obsToTensor(o)).v.arraySync() as number[][])[0][0];
           }
-          buffer.finishPath(v);
+          buffer.finishPath(v, d);
           if (terminal) {
             // store ep ret and eplen stuff
             ep_rets.push(ep_ret);
@@ -351,8 +371,8 @@ export class PPO<
           msg
         );
       }
-      await configs.epochCallback({
-        epoch,
+      await configs.iterationCallback({
+        iteration: epoch,
         ...metrics,
         ep_rets: ep_rets_metrics,
       });

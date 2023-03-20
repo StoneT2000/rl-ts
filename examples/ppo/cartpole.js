@@ -54,10 +54,12 @@ const main = async () => {
   // train the actor critic model with ppo
   ppo.train({
     verbose: true,
-    steps_per_epoch: 1000,
-    epochs: 200,
-    train_pi_iters: 80,
-    train_v_iters: 80,
+    steps_per_iteration: 2048,
+    batch_size: 64,
+    iterations: 200,
+    n_epochs: 10,
+    lam: 0.95,
+    vf_coef: 0.5,
     epochCallback: epochCallback,
   });
 };

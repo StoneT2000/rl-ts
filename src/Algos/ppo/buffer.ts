@@ -75,23 +75,17 @@ export class PPOBuffer {
     this.ptr += 1;
   }
 
-  public finishPath(lastVal = 0) {
+  public finishPath(lastVal = 0, done: boolean) {
     const path_slice = [this.pathStartIdx, this.ptr];
-    const rews = np.push(this.rewBuf.slice(path_slice), lastVal);
-    const vals = np.push(this.valBuf.slice(path_slice), lastVal);
-    // GAE Lambda Advantage = sum (gamma lambda)^h delta_{t+h, 0}
-    // compute delta_{t+h, 0}
-    // replicates deltas = rews[:-1] + gamma * vals[1:] - vals[:-1]
-    const deltas = rews
-      .slice([0, -1])
-      .add(vals.slice(1).multiply(this.gamma))
-      .subtract(vals.slice([0, -1]));
-
-    // compute GAE-Lambda advantage, assign in place.
-    this.advBuf.slice(path_slice).assign(core.discountCumSum(deltas, this.gamma * this.lam), false);
-
-    // compute rewards-to-go
-    this.retBuf.slice(path_slice).assign(core.discountCumSum(rews, this.gamma).slice([0, -1]), false);
+    let lastGaeLam = 0;
+    for (let t = this.ptr - 1; t >= this.pathStartIdx; t--) {
+      const nextVal = t === this.ptr - 1 ? lastVal : this.valBuf.get(t + 1);
+      const nextNonTerminal = t === this.ptr - 1 ? (done ? 0 : 1) : 1;
+      const delta = this.rewBuf.get(t) + this.gamma * nextVal * nextNonTerminal - this.valBuf.get(t);
+      lastGaeLam = delta + this.gamma * this.lam * nextNonTerminal * lastGaeLam;
+      this.advBuf.set(t, lastGaeLam);
+    }
+    this.retBuf.slice(path_slice).assign(this.advBuf.slice(path_slice).add(this.valBuf.slice(path_slice)), false);
 
     this.pathStartIdx = this.ptr;
   }
@@ -103,18 +97,11 @@ export class PPOBuffer {
     this.pathStartIdx = 0;
     this.ptr = 0;
 
-    // move to tensors for use by update method and nicer functions
-    let advBuf = np.toTensor(this.advBuf);
-
-    // normalization trick
-    const stats = await ct.statisticsScalar(advBuf, { max: true, min: true }, true);
-    advBuf = advBuf.sub(stats.mean).div(stats.std);
-    this.advBuf = await np.fromTensor(advBuf);
     return {
       obs: np.toTensor(this.obsBuf),
       act: np.toTensor(this.actBuf) as Tensor1D,
       ret: np.toTensor(this.retBuf) as Tensor1D,
-      adv: advBuf as Tensor1D,
+      adv: np.toTensor(this.advBuf) as Tensor1D,
       logp: np.toTensor(this.logpBuf) as Tensor1D,
     };
   }

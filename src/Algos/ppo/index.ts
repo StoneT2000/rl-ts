@@ -185,20 +185,23 @@ export class PPO<
     };
     const compute_loss_pi = (data: PPOBufferComputations): { loss_pi: tf.Tensor; pi_info: pi_info } => {
       const { obs, act, adv } = data;
-      const logp_old = data.logp;
       return tf.tidy(() => {
+        const logp_old = data.logp.expandDims(-1);
+        const adv_e = adv.expandDims(-1);
         const { pi, logp_a } = this.ac.pi.apply(obs, act);
 
         const ratio = logp_a!.sub(logp_old).exp();
-        const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv);
+        const clip_adv = ratio.clipByValue(1 - clip_ratio, 1 + clip_ratio).mul(adv_e);
 
-        const adv_ratio = ratio.mul(adv);
+        const adv_ratio = ratio.mul(adv_e);
 
         const ratio_and_clip_adv = tf.stack([adv_ratio, clip_adv]);
 
         const loss_pi = ratio_and_clip_adv.min(0).mean().mul(-1);
 
-        const approx_kl = logp_old.sub(logp_a!).mean().arraySync() as number;
+        const log_ratio = logp_a!.sub(logp_old);
+        const approx_kl = log_ratio.exp().sub(1).sub(log_ratio).mean().arraySync() as number;
+
         const entropy = pi.entropy().mean().arraySync() as number;
         const clipped = ratio
           .greater(1 + clip_ratio)
@@ -218,7 +221,10 @@ export class PPO<
     };
     const compute_loss_vf = (data: PPOBufferComputations) => {
       const { obs, ret } = data;
-      return this.ac.v.apply(obs).sub(ret).pow(2).mean();
+      return tf.tidy(() => {
+        const predict = this.ac.v.apply(obs).flatten();
+        return predict.sub(ret).pow(2).mean();
+      });
     };
 
     const update = async () => {
@@ -308,7 +314,7 @@ export class PPO<
     let ep_ret = 0;
     let ep_len = 0;
     let ep_rets = [];
-    for (let epoch = 0; epoch < configs.iterations; epoch++) {
+    for (let iteration = 0; iteration < configs.iterations; iteration++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
         let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
@@ -362,7 +368,7 @@ export class PPO<
       const ep_rets_metrics = await ct.statisticsScalar(np.tensorLikeToTensor(ep_rets));
 
       if (ct.id() === 0) {
-        const msg = `${configs.name} | Epoch ${epoch} metrics: `;
+        const msg = `${configs.name} | Iteration ${iteration} metrics: `;
         log.info(
           {
             ...metrics,
@@ -372,7 +378,7 @@ export class PPO<
         );
       }
       await configs.iterationCallback({
-        iteration: epoch,
+        iteration,
         ...metrics,
         ep_rets: ep_rets_metrics,
       });

@@ -23,3 +23,6 @@ saves
 
 # venv
 venv
+
+# tfboard logs
+logs

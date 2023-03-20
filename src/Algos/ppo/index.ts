@@ -155,15 +155,15 @@ export class PPO<
       act_dim = [1];
     }
 
-    let local_steps_per_epoch = configs.steps_per_iteration / ct.numProcs();
-    if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
-      configs.steps_per_iteration = Math.ceil(local_steps_per_epoch) * ct.numProcs();
+    let local_steps_per_iteration = configs.steps_per_iteration / ct.numProcs();
+    if (Math.ceil(local_steps_per_iteration) !== local_steps_per_iteration) {
+      configs.steps_per_iteration = Math.ceil(local_steps_per_iteration) * ct.numProcs();
       log.warn(
         `${configs.name} | Changing steps per epoch to ${
           configs.steps_per_iteration
         } as there are ${ct.numProcs()} processes running`
       );
-      local_steps_per_epoch = configs.steps_per_iteration / ct.numProcs();
+      local_steps_per_iteration = configs.steps_per_iteration / ct.numProcs();
     }
 
     const buffer = new PPOBuffer({
@@ -171,7 +171,7 @@ export class PPO<
       lam: configs.lam,
       actDim: act_dim,
       obsDim: obs_dim,
-      size: local_steps_per_epoch,
+      size: local_steps_per_iteration,
     });
 
     if (ct.id() === 0) {
@@ -315,7 +315,7 @@ export class PPO<
     let ep_len = 0;
     let ep_rets = [];
     for (let iteration = 0; iteration < configs.iterations; iteration++) {
-      for (let t = 0; t < local_steps_per_epoch; t++) {
+      for (let t = 0; t < local_steps_per_iteration; t++) {
         let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);
@@ -342,7 +342,7 @@ export class PPO<
 
         const timeout = ep_len === configs.max_ep_len;
         const terminal = d || timeout;
-        const epoch_ended = t === local_steps_per_epoch - 1;
+        const epoch_ended = t === local_steps_per_iteration - 1;
         if (terminal || epoch_ended) {
           if (epoch_ended && !terminal) {
             log.warn(`${configs.name} | Trajectory cut off by epoch at ${ep_len} steps`);

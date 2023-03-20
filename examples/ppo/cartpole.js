@@ -30,7 +30,7 @@ const main = async () => {
   });
 
   // define a evaluation function to be called at the end of every epoch
-  const epochCallback = async ({ iteration, ep_rets, kl }) => {
+  const iterationCallback = async ({ iteration, ep_rets, kl }) => {
     // let obs = env.reset();
     // let rewards = 0;
     // while (true) {
@@ -44,7 +44,7 @@ const main = async () => {
     //   obs = stepInfo.observation;
     //   if (stepInfo.done) break;
     // }
-    // console.log(`Episode ${epoch} - Eval Rewards: ${rewards}`);
+    // console.log(`Iteration ${iteration} - Eval Rewards: ${rewards}`);
     summaryWriter.scalar('kl', kl, iteration * steps_per_iteration);
     summaryWriter.scalar('reward', ep_rets.mean, iteration * steps_per_iteration);
   };
@@ -58,11 +58,11 @@ const main = async () => {
     verbose: true,
     steps_per_iteration,
     batch_size: 64,
-    iterations: 200,
+    iterations: 100,
     n_epochs: 10,
     lam: 0.95,
     vf_coef: 0.5,
-    epochCallback: epochCallback,
+    iterationCallback,
   });
 };
 main();

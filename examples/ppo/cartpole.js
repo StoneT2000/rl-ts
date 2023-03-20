@@ -1,7 +1,7 @@
 const tf = require('@tensorflow/tfjs-node');
 const RL = require('../../lib');
 
-const RUN = `cart-old`;
+const RUN = `cart-2-categorical`;
 const tfBoardPath = `./logs/${RUN}-${Date.now()}`;
 const summaryWriter = tf.node.summaryFileWriter(tfBoardPath);
 
@@ -18,12 +18,12 @@ const main = async () => {
   // create the Actor Critic model
   const ac = new RL.Models.MLPActorCritic(env.observationSpace, env.actionSpace, [24, 48]);
 
-  // create the vpg algorithm and define a actionToTensor function to discretize the actions produced by the Actor
+  // create the ppo algorithm and define a actionToTensor function to discretize the actions produced by the Actor
   const ppo = new RL.Algos.PPO(makeEnv, ac, {
     actionToTensor: (action) => {
-      // Cartpole has a discrete action space whereas Actor Critic by default returns values according to the shape of the action space.
-      // CartPole has an action space with shape [2] so we discretize the Actor by transforming its output into the argmax of it.
-      return action.argMax(1);
+      // Cartpole has a discrete action space
+      // Actor Critic uses categorical distribution for discrete action space to sample actions
+      return action.squeeze();
     },
   });
 

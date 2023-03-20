@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
-    "ppo:cartpole": "node examples/ppo/cartpole.js",
+    "ppo:cartpole": "npm run build && node examples/ppo/cartpole.js",
     "test": "sh ./tests/test.sh",
     "test:report": "nyc --reporter=html mocha tests/**/*.spec.ts",
     "build:es5": "ttsc --build tsconfig.json && copyfiles -u 1 src/**/*.html src/**/*.css src/**/*.js lib",

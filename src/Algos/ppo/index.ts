@@ -1,6 +1,6 @@
 import { Agent } from 'rl-ts/lib/Agent';
 import { Environment } from 'rl-ts/lib/Environments';
-import { Space } from 'rl-ts/lib/Spaces';
+import { Discrete, Space } from 'rl-ts/lib/Spaces';
 import * as random from 'rl-ts/lib/utils/random';
 import * as tf from '@tensorflow/tfjs';
 import { PPOBuffer, PPOBufferComputations } from 'rl-ts/lib/Algos/ppo/buffer';
@@ -150,7 +150,11 @@ export class PPO<
 
     const env = this.env;
     const obs_dim = env.observationSpace.shape;
-    const act_dim = env.actionSpace.shape;
+    let act_dim = env.actionSpace.shape;
+    // store single value for discrete action space since we are using categorical distribution
+    if (env.actionSpace instanceof Discrete) {
+      act_dim = [1];
+    }
 
     let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
@@ -286,7 +290,7 @@ export class PPO<
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-        const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
+        let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
         const stepInfo = env.step(action);
         const next_o = stepInfo.observation;
@@ -295,6 +299,10 @@ export class PPO<
         const d = stepInfo.done;
         ep_ret += r;
         ep_len += 1;
+
+        if (env.actionSpace.meta.discrete) {
+          a = a.reshape([-1, 1]);
+        }
 
         buffer.store(
           np.tensorLikeToNdArray(this.obsToTensor(o)),

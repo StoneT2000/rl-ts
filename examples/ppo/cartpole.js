@@ -9,10 +9,10 @@ const main = async () => {
     return new RL.Environments.Examples.CartPole();
   };
   const env = makeEnv();
-  
+
   // create the Actor Critic model
   const ac = new RL.Models.MLPActorCritic(env.observationSpace, env.actionSpace, [24, 48]);
-  
+
   // create the vpg algorithm and define a actionToTensor function to discretize the actions produced by the Actor
   const ppo = new RL.Algos.PPO(makeEnv, ac, {
     actionToTensor: (action) => {
@@ -37,9 +37,7 @@ const main = async () => {
       obs = stepInfo.observation;
       if (stepInfo.done) break;
     }
-    console.log(
-      `Episode ${epoch} - Eval Rewards: ${rewards}`
-    );
+    console.log(`Episode ${epoch} - Eval Rewards: ${rewards}`);
   };
 
   // Uncomment the 2 lines below to train on 2 CPUs. Will train on forkCount + 1 cpus.
@@ -53,7 +51,7 @@ const main = async () => {
     epochs: 200,
     train_pi_iters: 80,
     train_v_iters: 80,
-    epochCallback: epochCallback
+    epochCallback: epochCallback,
   });
 };
 main();

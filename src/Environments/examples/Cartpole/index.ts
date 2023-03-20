@@ -61,7 +61,7 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, Observa
   }
   step(action: Action) {
     let reward = 1;
-    const info = {};
+    const info: any = {};
     let x = this.state.get(0);
     let x_dot = this.state.get(1);
     let theta = this.state.get(2);
@@ -87,12 +87,18 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, Observa
     this.timestep += 1;
     this.globalTimestep += 1;
 
-    const done =
+    let done =
       x < -this.x_threshold ||
       x > this.x_threshold ||
       theta < -this.theta_threshold_radians ||
-      theta > this.theta_threshold_radians ||
-      this.timestep >= this.maxEpisodeSteps;
+      theta > this.theta_threshold_radians;
+
+    // https://github.com/openai/gym/blob/v0.21.0/gym/wrappers/time_limit.py#L21-L22
+    if (this.timestep >= this.maxEpisodeSteps) {
+      info['TimeLimit.truncated'] = !done;
+      info['terminal_observation'] = this.state;
+      done = true;
+    }
 
     if (!done) {
       reward = 1.0;

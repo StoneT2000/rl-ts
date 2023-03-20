@@ -18,3 +18,5 @@ saves
 # for macs
 .DS_Store
 
+# vscode
+.vscode

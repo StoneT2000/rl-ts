@@ -1,9 +1,8 @@
 const tf = require('@tensorflow/tfjs-node');
 const RL = require('../../lib');
 
-const RUN = `cart-2-categorical`;
+const RUN = `cart`;
 const tfBoardPath = `./logs/${RUN}-${Date.now()}`;
-const summaryWriter = tf.node.summaryFileWriter(tfBoardPath);
 
 const main = async () => {
   // seed for reproducibility
@@ -29,26 +28,29 @@ const main = async () => {
     },
   });
 
-  // define a evaluation function to be called at the end of every epoch
+  // define a evaluation function to be called at the end of every iteration
   const iterationCallback = async ({ iteration, ep_rets, kl, loss_pi, loss_vf }) => {
-    // let obs = env.reset();
-    // let rewards = 0;
-    // while (true) {
-    //   const action = ppo.act(obs);
-    //   const stepInfo = env.step(action);
-    //   rewards += stepInfo.reward;
-    //   if (epoch > 10) {
-    //     // after 10 epochs, start rendering the evaluation onto a web viewer
-    //     await env.render('web', { fps: 60, episode: epoch });
-    //   }
-    //   obs = stepInfo.observation;
-    //   if (stepInfo.done) break;
-    // }
-    // console.log(`Iteration ${iteration} - Eval Rewards: ${rewards}`);
-    summaryWriter.scalar('kl', kl, iteration * steps_per_iteration);
-    summaryWriter.scalar('reward', ep_rets.mean, iteration * steps_per_iteration);
-    summaryWriter.scalar('loss_pi', loss_pi, iteration * steps_per_iteration);
-    summaryWriter.scalar('loss_vf', loss_vf, iteration * steps_per_iteration);
+    let obs = env.reset();
+    let rewards = 0;
+    while (true) {
+      const action = ppo.act(obs);
+      const stepInfo = env.step(action);
+      rewards += stepInfo.reward;
+      if (iteration > 10) {
+        // after 10 iterations, start rendering the evaluation onto a web viewer
+        await env.render('web', { fps: 60, episode: iteration });
+      }
+      obs = stepInfo.observation;
+      if (stepInfo.done) break;
+    }
+    console.log(`Iteration ${iteration} - Eval Rewards: ${rewards}`);
+
+    // comment out above and uncomment below to log to tensorboard
+    // const summaryWriter = tf.node.summaryFileWriter(tfBoardPath);
+    // summaryWriter.scalar('kl', kl, iteration * steps_per_iteration);
+    // summaryWriter.scalar('reward', ep_rets.mean, iteration * steps_per_iteration);
+    // summaryWriter.scalar('loss_pi', loss_pi, iteration * steps_per_iteration);
+    // summaryWriter.scalar('loss_vf', loss_vf, iteration * steps_per_iteration);
   };
 
   // Uncomment the 2 lines below to train on 2 CPUs. Will train on forkCount + 1 cpus.

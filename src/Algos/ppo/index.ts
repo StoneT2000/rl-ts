@@ -329,10 +329,16 @@ export class PPO<
         const stepInfo = env.step(action);
         const next_o = stepInfo.observation;
 
-        const r = stepInfo.reward;
+        let r = stepInfo.reward;
         const d = stepInfo.done;
         ep_ret += r;
         ep_len += 1;
+
+        if (d && stepInfo.info && stepInfo.info['TimeLimit.truncated'] && stepInfo.info['terminal_observation']) {
+          const terminalObs = this.obsToTensor(stepInfo.info['terminal_observation']);
+          const terminalValue = (this.ac.step(terminalObs).v.arraySync() as number[][])[0][0];
+          r += configs.gamma * terminalValue;
+        }
 
         if (env.actionSpace.meta.discrete) {
           a = a.reshape([-1, 1]);

@@ -43,6 +43,8 @@ export interface PPOTrainConfigs {
       mean: number;
       std: number;
     };
+    loss_pi: number;
+    loss_vf: number;
   }): any;
   optimizer: tf.Optimizer;
   /** How frequently in terms of total steps to save the model. This is not used if saveDirectory is not provided */
@@ -233,6 +235,8 @@ export class PPO<
       const batchSize = configs.batch_size;
 
       let kls: number[] = [];
+      let loss_pis: number[] = [];
+      let loss_vfs: number[] = [];
       let entropy = 0;
       let clip_frac = 0;
 
@@ -270,6 +274,8 @@ export class PPO<
             clip_frac = pi_info.clip_frac;
 
             const loss_v = compute_loss_vf(batchData);
+            loss_pis.push(loss_pi.arraySync() as number);
+            loss_vfs.push(loss_v.arraySync() as number);
             return loss_pi.add(loss_v.mul(configs.vf_coef)) as tf.Scalar;
           });
           if (kls[kls.length - 1] > 1.5 * target_kl) {
@@ -304,6 +310,8 @@ export class PPO<
         entropy,
         clip_frac,
         trained_pi_iters,
+        loss_pi: nj.mean(nj.array(loss_pis)),
+        loss_vf: nj.mean(nj.array(loss_vfs)),
       };
 
       return metrics;

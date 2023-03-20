@@ -30,7 +30,7 @@ const main = async () => {
   });
 
   // define a evaluation function to be called at the end of every epoch
-  const iterationCallback = async ({ iteration, ep_rets, kl }) => {
+  const iterationCallback = async ({ iteration, ep_rets, kl, loss_pi, loss_vf }) => {
     // let obs = env.reset();
     // let rewards = 0;
     // while (true) {
@@ -47,6 +47,8 @@ const main = async () => {
     // console.log(`Iteration ${iteration} - Eval Rewards: ${rewards}`);
     summaryWriter.scalar('kl', kl, iteration * steps_per_iteration);
     summaryWriter.scalar('reward', ep_rets.mean, iteration * steps_per_iteration);
+    summaryWriter.scalar('loss_pi', loss_pi, iteration * steps_per_iteration);
+    summaryWriter.scalar('loss_vf', loss_vf, iteration * steps_per_iteration);
   };
 
   // Uncomment the 2 lines below to train on 2 CPUs. Will train on forkCount + 1 cpus.

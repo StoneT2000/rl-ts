@@ -1,10 +1,10 @@
 const tf = require('@tensorflow/tfjs');
-const RL = require('rl-ts');
+const RL = require('../../lib');
 const main = async () => {
   // seed for reproducibility
   RL.random.seed(0);
 
-  // create both the policy and target networks. 
+  // create both the policy and target networks.
   const policyNet = tf.sequential();
   policyNet.add(tf.layers.dense({ units: 12, inputShape: [4], activation: 'tanh' }));
   policyNet.add(tf.layers.dense({ units: 24, activation: 'tanh' }));
@@ -31,7 +31,7 @@ const main = async () => {
 
   /**
    * this evaluation script will be passed into the training function to then be called at the end of each episode
-   * 
+   *
    * The function has the following arguments. It may be async if you like, DQN will automatically await this function.
    * epochCallback(epochDate: {
    *    step: number;
@@ -53,20 +53,22 @@ const main = async () => {
         // after 60 episodes start rendering the evaluation to a web viewer to visualize the progress.
         await dqn.env.render('web', { fps: 60, episode: episodeIteration, rewards });
       }
-      
+
       if (done) break;
     }
     console.log(
-      `Episode ${episodeIteration} - Train Rewards: ${episodeRewards[episodeRewards.length - 1]} - Eval Rewards: ${rewards}`
+      `Episode ${episodeIteration} - Train Rewards: ${
+        episodeRewards[episodeRewards.length - 1]
+      } - Eval Rewards: ${rewards}`
     );
   };
 
   /**
    * train the policy and target networks using DQN with the following settings
-   * 
+   *
    * This can take a while to train well
    */
-  dqn.train({ totalEpisodes: 1000, batchSize: 128, verbose: true, epochCallback, });
+  dqn.train({ totalEpisodes: 1000, batchSize: 128, verbose: true, epochCallback });
 };
 
 main();

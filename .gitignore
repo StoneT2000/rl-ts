@@ -18,3 +18,11 @@ saves
 # for macs
 .DS_Store
 
+# vscode
+.vscode
+
+# venv
+venv
+
+# tfboard logs
+logs

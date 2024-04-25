@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import nj, { NdArray } from 'numjs';
+import { NdArray } from 'numjs';
 import { tensorLikeToNdArray, tensorLikeToTensor } from 'rl-ts/lib/utils/np';
 import { Distribution } from '.';
 import { gatherOwn } from '../gather';
@@ -18,7 +18,7 @@ export class Categorical extends Distribution {
     this.tf_logits = tf_logits;
   }
   sample(): tf.Tensor {
-    let logits = this.logits_parameter();
+    const logits = this.logits_parameter();
     const sample = tf.buffer([logits.shape[0]], 'float32');
     const logits_2d = tf.reshape(logits, [-1, this._num_categories(logits)]);
     for (let i = 0; i < sample.size; i++) {

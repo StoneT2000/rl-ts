@@ -234,9 +234,9 @@ export class PPO<
       const totalSize = configs.steps_per_iteration;
       const batchSize = configs.batch_size;
 
-      let kls: number[] = [];
-      let loss_pis: number[] = [];
-      let loss_vfs: number[] = [];
+      const kls: number[] = [];
+      const loss_pis: number[] = [];
+      const loss_vfs: number[] = [];
       let entropy = 0;
       let clip_frac = 0;
 
@@ -247,7 +247,7 @@ export class PPO<
       for (let epoch = 0; epoch < configs.n_epochs; epoch++) {
         let batchStartIndex = 0;
         let batch = 0;
-        let maxBatch = Math.floor(totalSize / batchSize);
+        const maxBatch = Math.floor(totalSize / batchSize);
         const indices = tf.tensor1d(Array.from(tf.util.createShuffledIndices(totalSize)), 'int32');
         while (batch < maxBatch) {
           const batchData = {
@@ -324,8 +324,8 @@ export class PPO<
     let ep_rets = [];
     for (let iteration = 0; iteration < configs.iterations; iteration++) {
       for (let t = 0; t < local_steps_per_iteration; t++) {
-        let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
-        const action = np.tensorLikeToNdArray(this.actionToTensor(a));
+        const { a: _a, v, logp_a } = this.ac.step(this.obsToTensor(o));
+        const action = np.tensorLikeToNdArray(this.actionToTensor(_a));
         const stepInfo = env.step(action);
         const next_o = stepInfo.observation;
 
@@ -340,8 +340,9 @@ export class PPO<
           r += configs.gamma * terminalValue;
         }
 
+        let a = _a;
         if (env.actionSpace.meta.discrete) {
-          a = a.reshape([-1, 1]);
+          a = _a.reshape([-1, 1]);
         }
 
         buffer.store(

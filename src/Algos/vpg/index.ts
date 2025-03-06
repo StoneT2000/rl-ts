@@ -147,16 +147,10 @@ export class VPG<
     const env = this.env;
     const obs_dim = env.observationSpace.shape;
     let act_dim = env.actionSpace.shape;
-    console.log('act_dim');
-    console.log(act_dim);
-    console.log('env.actionSpace');
-    console.log(env.actionSpace);
     // store single value for discrete action space since we are using categorical distribution
     if (env.actionSpace instanceof Discrete) {
       act_dim = [1];
     }
-
-    console.log(act_dim);
 
     let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {

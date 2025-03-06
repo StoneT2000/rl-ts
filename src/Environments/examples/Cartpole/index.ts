@@ -53,13 +53,13 @@ export class CartPole extends Environment<ObservationSpace, ActionSpace, Observa
     this.observationSpace = new Box(caps.multiply(-1), caps, caps.shape, 'float32');
     this.actionSpace = new Discrete(2);
   }
-  reset(): State {
+  reset(): Promise<Observation> {
     this.state = random.random([4], -0.05, 0.05);
     this.steps_beyond_done = null;
     this.timestep = 0;
-    return this.state;
+    return Promise.resolve(this.state);
   }
-  step(action: Action) {
+  async step(action: Action) {
     let reward = 1;
     const info: any = {};
     let x = this.state.get(0);

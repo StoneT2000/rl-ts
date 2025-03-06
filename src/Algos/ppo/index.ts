@@ -318,7 +318,7 @@ export class PPO<
     };
 
     // const start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
-    let o = env.reset();
+    let o = await env.reset();
     let ep_ret = 0;
     let ep_len = 0;
     let ep_rets = [];
@@ -326,7 +326,7 @@ export class PPO<
       for (let t = 0; t < local_steps_per_iteration; t++) {
         let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
-        const stepInfo = env.step(action);
+        const stepInfo = await env.step(action);
         const next_o = stepInfo.observation;
 
         let r = stepInfo.reward;
@@ -370,7 +370,7 @@ export class PPO<
             // store ep ret and eplen stuff
             ep_rets.push(ep_ret);
           }
-          o = env.reset();
+          o = await env.reset();
           ep_ret = 0;
           ep_len = 0;
         }

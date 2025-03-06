@@ -2,12 +2,12 @@ import { expect } from 'chai';
 import { Environments } from '../../src';
 
 describe('Test Simple Grid World', () => {
-  it('should run a episode properly', () => {
+  it('should run a episode properly', async () => {
     const env = new Environments.Examples.SimpleGridWorld(4, 4, [{ x: 0, y: 3 }], { x: 0, y: 0 });
     // eslint-disable-next-line
-    const observation = env.reset();
+    const observation = await env.reset();
     for (let step = 1; step < 4; step++) {
-      const stepOut = env.step(2);
+      const stepOut = await env.step(2);
       const reward = stepOut.reward;
       const done = stepOut.done;
       expect(reward).to.equal(-1);
@@ -17,7 +17,7 @@ describe('Test Simple Grid World', () => {
         expect(done).to.equal(true);
       }
       if (done) {
-        env.reset();
+        await env.reset();
       }
     }
   });

@@ -57,7 +57,7 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
       throw new Error(`Start Position ${startPosition} is off the grid`);
     }
   }
-  step(action: Action) {
+  async step(action: Action) {
     const reward = -1;
     const newPos = this.translate(this.state.agentPos, action);
     let done = false;
@@ -100,14 +100,14 @@ export class SimpleGridWorld extends Environment<ObservationSpace, ActionSpace, 
     }
   }
 
-  public reset(state?: State): State {
+  public reset(state?: State): Promise<Observation> {
     if (state) {
       this.state = state;
     } else {
       this.state = this.genState();
     }
     this.stepsSoFar = 0;
-    return this.getObs();
+    return Promise.resolve(this.getObs());
   }
 
   private getObs(): State {

@@ -63,13 +63,13 @@ export class IterativePolicyEvaluation<
    * @param params.steps - if set to positive integer, will train for this many number of steps regardless of epsilon choice - @default `undefined`
    * @param params.verbose - whether to log steps - @default `false`
    */
-  train(
+  async train(
     params: {
       epsilon?: number;
       verbose: boolean;
       steps?: number;
     } = { epsilon: 1e-3, verbose: false }
-  ): void {
+  ): Promise<void> {
     const { epsilon, verbose, steps } = params;
     for (let step = 1; ; step++) {
       if (steps && step > steps) {
@@ -86,8 +86,8 @@ export class IterativePolicyEvaluation<
         let v_pi_s = 0;
         for (const action of this.configs.allPossibleActions) {
           const state = this.repToState.bind(env)(rep);
-          const observation = env.reset(state);
-          const stepOut = env.step(action);
+          const observation = await env.reset(state);
+          const stepOut = await env.step(action);
           const p_srsa = this.configs.policy(action, observation);
           const reward = stepOut.reward;
 

@@ -12,7 +12,7 @@ describe('Test VPG', () => {
     const ac = new RL.Models.MLPActorCritic(env.observationSpace, env.actionSpace, [24, 48]);
     const vpg = new RL.Algos.VPG(makeEnv, ac, {
       actionToTensor: (action: tf.Tensor) => {
-        return action.argMax(1);
+        return action.squeeze();
       },
     });
     await vpg.train({

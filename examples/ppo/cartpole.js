@@ -30,11 +30,11 @@ const main = async () => {
 
   // define a evaluation function to be called at the end of every iteration
   const iterationCallback = async ({ iteration, ep_rets, kl, loss_pi, loss_vf }) => {
-    let obs = env.reset();
+    let obs = await env.reset();
     let rewards = 0;
     while (true) {
       const action = ppo.act(obs);
-      const stepInfo = env.step(action);
+      const stepInfo = await env.step(action);
       rewards += stepInfo.reward;
       if (iteration > 10) {
         // after 10 iterations, start rendering the evaluation onto a web viewer

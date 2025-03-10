@@ -12,14 +12,12 @@ describe('Test PPO', () => {
     const ac = new RL.Models.MLPActorCritic(env.observationSpace, env.actionSpace, [24, 48]);
     const ppo = new RL.Algos.PPO(makeEnv, ac, {
       actionToTensor: (action: tf.Tensor) => {
-        return action.argMax(1);
+        return action.squeeze();
       },
     });
     await ppo.train({
-      steps_per_epoch: 100,
-      epochs: 10,
-      train_pi_iters: 10,
-      train_v_iters: 80,
+      steps_per_iteration: 100,
+      iterations: 10,
     });
   }).slow(20000);
 });

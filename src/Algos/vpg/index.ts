@@ -1,6 +1,6 @@
 import { Agent } from 'rl-ts/lib/Agent';
 import { Environment } from 'rl-ts/lib/Environments';
-import { Space } from 'rl-ts/lib/Spaces';
+import { Discrete, Space } from 'rl-ts/lib/Spaces';
 import * as random from 'rl-ts/lib/utils/random';
 import * as tf from '@tensorflow/tfjs';
 import { VPGBuffer, VPGBufferComputations } from 'rl-ts/lib/Algos/vpg/buffer';
@@ -146,7 +146,11 @@ export class VPG<
 
     const env = this.env;
     const obs_dim = env.observationSpace.shape;
-    const act_dim = env.actionSpace.shape;
+    let act_dim = env.actionSpace.shape;
+    // store single value for discrete action space since we are using categorical distribution
+    if (env.actionSpace instanceof Discrete) {
+      act_dim = [1];
+    }
 
     let local_steps_per_epoch = configs.steps_per_epoch / ct.numProcs();
     if (Math.ceil(local_steps_per_epoch) !== local_steps_per_epoch) {
@@ -245,21 +249,25 @@ export class VPG<
     };
 
     // const start_time = process.hrtime()[0] * 1e6 + process.hrtime()[1];
-    let o = env.reset();
+    let o = await env.reset();
     let ep_ret = 0;
     let ep_len = 0;
     let ep_rets = [];
     for (let epoch = 0; epoch < configs.epochs; epoch++) {
       for (let t = 0; t < local_steps_per_epoch; t++) {
-        const { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
+        let { a, v, logp_a } = this.ac.step(this.obsToTensor(o));
         const action = np.tensorLikeToNdArray(this.actionToTensor(a));
-        const stepInfo = env.step(action);
+        const stepInfo = await env.step(action);
         const next_o = stepInfo.observation;
 
         const r = stepInfo.reward;
         const d = stepInfo.done;
         ep_ret += r;
         ep_len += 1;
+
+        if (env.actionSpace.meta.discrete) {
+          a = a.reshape([-1, 1]);
+        }
 
         buffer.store(
           np.tensorLikeToNdArray(this.obsToTensor(o)),
@@ -287,7 +295,7 @@ export class VPG<
             // store ep ret and eplen stuff
             ep_rets.push(ep_ret);
           }
-          o = env.reset();
+          o = await env.reset();
           ep_ret = 0;
           ep_len = 0;
         }

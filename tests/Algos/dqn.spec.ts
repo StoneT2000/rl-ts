@@ -27,13 +27,13 @@ describe('Test DQN', () => {
       targetNet,
     });
 
-    const evaluationRewards = [];
-    const evaluateModel = () => {
-      let state = dqn.env.reset();
+    const evaluationRewards: number[] = [];
+    const evaluateModel = async () => {
+      let state = await dqn.env.reset();
       let reward = 0;
       while (true) {
         const action = dqn.act(state);
-        const stepInfo = dqn.env.step(action);
+        const stepInfo = await dqn.env.step(action);
         reward += stepInfo.reward;
         state = stepInfo.observation;
         if (stepInfo.done) break;

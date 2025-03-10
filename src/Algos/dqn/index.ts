@@ -156,7 +156,7 @@ export class DQN<
     }
 
     const { optimizer, gamma } = configs;
-    let state = this.env.reset();
+    let state = await this.env.reset();
     const episodeDurations = [0];
     const episodeRewards = [0.0];
     let episodeIteration = 0;
@@ -167,7 +167,7 @@ export class DQN<
       const action = this.actEps(state, eps);
 
       // Step through environment
-      const stepInfo = this.env.step(action);
+      const stepInfo = await this.env.step(action);
 
       // store next state and push to replay buffer
       const nextState = stepInfo.observation;
@@ -233,7 +233,7 @@ export class DQN<
         episodeDurations.push(0);
         episodeRewards.push(0);
         episodeIteration = episodeIteration + 1;
-        state = this.env.reset();
+        state = await this.env.reset();
       }
     }
   }

@@ -58,13 +58,13 @@ export class Pendulum extends Environment<ObservationSpace, any, Observation, St
       this.actionSpace = new Box(-this.max_torque, this.max_torque, [1], 'float32');
     }
   }
-  reset(): Observation {
+  reset(): Promise<Observation> {
     const high = nj.array([Math.PI, 1]);
     this.state = random.random([2], 0, 1).multiply(high.multiply(2)).subtract(high);
     this.timestep = 0;
-    return this.getObs();
+    return Promise.resolve(this.getObs());
   }
-  step(action: Action) {
+  async step(action: Action) {
     const th = this.state.get(0);
     const thdot = this.state.get(1);
 

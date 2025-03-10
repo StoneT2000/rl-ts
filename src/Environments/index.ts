@@ -69,7 +69,7 @@ export abstract class Environment<
    *
    * Note that the observation is not necessarily required to be of the same type as state.
    */
-  abstract step(action: Action): { observation: Observation; reward: Reward; done: boolean; info?: any };
+  abstract step(action: Action): Promise<{ observation: Observation; reward: Reward; done: boolean; info?: any }>;
 
   /**
    * Resets the environment to an initial state and return the initial observation
@@ -78,7 +78,7 @@ export abstract class Environment<
    *
    * @param state - a state to load the environment with instead of generating an initial state. Note, not all environments are guranteed to use this
    */
-  abstract reset(state?: State): Observation;
+  abstract reset(state?: State): Promise<Observation>;
 
   /**
    * Renders the environment

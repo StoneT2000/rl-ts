@@ -3,7 +3,7 @@ import { DP } from '../../src';
 import { SimpleGridWorld } from '../../src/Environments/examples';
 
 describe('Test Policy Iteration', () => {
-  it('should solve simple grid world', () => {
+  it('should solve simple grid world', async () => {
     const width = 4;
     const height = 4;
     const targetPositions = [
@@ -15,12 +15,13 @@ describe('Test Policy Iteration', () => {
       return new SimpleGridWorld(width, height, targetPositions, { x: 1, y: 0 });
     };
     const env = makeEnv();
-    const allStateReps = [];
+    const allStateReps: number[] = [];
     for (let x = 0; x < env.width; x++) {
       for (let y = 0; y < env.height; y++) {
         const pos = { x: x, y: y };
         const env = new SimpleGridWorld(width, height, targetPositions, pos);
-        allStateReps.push(env.stateToRep(env.reset()));
+        const obs = await env.reset();
+        allStateReps.push(env.stateToRep(obs));
       }
     }
     const policyIteration = new DP.PolicyIteration(makeEnv, {
@@ -38,8 +39,8 @@ describe('Test Policy Iteration', () => {
     });
 
     // verify all actions produced are optimal
-    allStateReps.forEach((rep) => {
-      const obs = env.reset(env.repToState(rep));
+    allStateReps.forEach(async (rep) => {
+      const obs = await env.reset(env.repToState(rep));
       // optimal solution is closest target square
       const closestTargetPositions: any[] = [];
       let closestDist = 99;
@@ -50,7 +51,7 @@ describe('Test Policy Iteration', () => {
           closestTargetPositions.push(p);
         }
       });
-      const optimalActions = [];
+      const optimalActions: number[] = [];
       if (closestDist == 0) return;
       for (const closestTargetPosition of closestTargetPositions) {
         if (closestTargetPosition.y > obs.agentPos.y) {

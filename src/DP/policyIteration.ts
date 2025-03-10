@@ -82,7 +82,7 @@ export class PolicyIteration<
     return a;
   }
 
-  private evaluatePolicy() {
+  private async evaluatePolicy() {
     const updated_values = new Map();
     for (let step = 1; ; step++) {
       let delta = 0;
@@ -92,11 +92,11 @@ export class PolicyIteration<
       for (const rep of this.configs.allStateReps) {
         const env = this.makeEnv();
         const state = this.repToState.bind(env)(rep);
-        const obs = env.reset(state);
+        const obs = await env.reset(state);
         const old_v = this.valueFunction.get(rep)!;
 
         const action = this.policy(obs);
-        const stepOut = env.step(action);
+        const stepOut = await env.step(action);
         const reward = stepOut.reward;
         // TODO for stochastic environments, we need to iterate over all possible future states
         let p_sp_r_s_a = 0;
@@ -118,7 +118,7 @@ export class PolicyIteration<
     }
   }
 
-  train(
+  async train(
     params: {
       untilStable: boolean;
       verbose: boolean;
@@ -127,9 +127,9 @@ export class PolicyIteration<
       untilStable: true,
       verbose: true,
     }
-  ): void {
+  ): Promise<void> {
     for (let step = 1; ; step++) {
-      this.evaluatePolicy();
+      await this.evaluatePolicy();
       let policyStable = true;
       if (params.verbose) {
         console.log(`Step ${step}`);
@@ -137,7 +137,7 @@ export class PolicyIteration<
       for (const rep of this.configs.allStateReps) {
         const env = this.makeEnv();
         const state = this.repToState.bind(env)(rep);
-        const obs = env.reset(state);
+        const obs = await env.reset(state);
         const oldAction = this.policy(obs);
         let greedyAction = oldAction;
         let bestValue: number = Number.MIN_SAFE_INTEGER;
@@ -145,8 +145,8 @@ export class PolicyIteration<
         // argmax action over all s', r : p(s', r | s, a) * [r + gamma * V(s')]
         for (const action of this.configs.allPossibleActions) {
           const state = this.repToState.bind(env)(rep);
-          const obs = env.reset(state);
-          const stepOut = env.step(action);
+          const obs = await env.reset(state);
+          const stepOut = await env.step(action);
           const reward = stepOut.reward;
           const p_sp_r_s_a = this.dynamics.bind(env)(stepOut.observation, reward, obs, action);
 
